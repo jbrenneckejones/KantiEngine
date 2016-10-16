@@ -1,4 +1,4 @@
-#include "../KantiFileManager.h"
+#include "../KantiManagers/KantiFileManager.h"
 #include "KantiVulkan.h"
 #include "VulkanSwapChain.h"
 #include "VulkanSwapChain.cpp"
@@ -10,12 +10,12 @@
 #include "VulkanDebug.cpp"
 #include "VulkanEncapsulatedDevice.h"
 #include "VulkanEncapsulatedDevice.cpp"
-#include "../KantiRenderManager.h"
-#include "../KantiRenderManager.cpp"
-#include "../KantiFileManager.h"
-#include "../KantiInputManager.h"
-#include "../KantiRandomManager.h"
-#include "../KantiCameraManager.h"
+#include "../KantiManagers/KantiRenderManager.h"
+#include "../KantiManagers/KantiRenderManager.cpp"
+#include "../KantiManagers/KantiFileManager.h"
+#include "../KantiManagers/KantiInputManager.h"
+#include "../KantiManagers/KantiRandomManager.h"
+#include "../KantiManagers/KantiCameraManager.h"
 
 struct vulkan_base_properties
 {
@@ -776,7 +776,7 @@ class VulkanRenderer
 
 		real32 Distance = 2.0f;
 
-		for(uint32 Index = 0; Index < 1000; ++Index)
+		for(uint32 Index = 0; Index < 100; ++Index)
 		{
 			Positions.PushBack(Vector3((real32)GridX * Distance, KantiRandomManager::RandomRangeUniform(0.0f, 1.0f), (real32)GridZ * Distance));
 			Colors.PushBack(Vector3(
@@ -795,10 +795,12 @@ class VulkanRenderer
 
 
 		Meshes.Resize(Positions.Count());
+
 		for(uint32 Index = 0; Index < Meshes.Count(); ++Index)
 		{
 			Meshes[Index] = new KantiRenderObject();
-			Meshes[Index]->Position = Positions[Index];
+			Meshes[Index]->Position = Positions[Index] * 100;
+			Meshes[Index]->Rotation = Quaternion::FromAxisAngle(Vector3(1.0f, 0.0f, 0.0f), 180.0f);
 			Meshes[Index]->Color = Colors[Index];
 			Meshes[Index]->Generate(Device, Queue);
 		}

@@ -8,8 +8,8 @@
 
 
 #include "KantiPlatform.h"
-#include "KantiMemoryManager.h"
-#include "KantiDebugManager.h"
+#include "../KantiManagers/KantiMemoryManager.h"
+#include "../KantiManagers/KantiDebugManager.h"
 #include "KantiMath.h"
 #include "vulkan/vulkan.h"
 

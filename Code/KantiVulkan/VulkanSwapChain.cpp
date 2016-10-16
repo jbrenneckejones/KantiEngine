@@ -1,5 +1,5 @@
 #include "VulkanSwapChain.h"
-#include "../KantiDebugManager.h"
+#include "../KantiManagers/KantiDebugManager.h"
 
 void VulkanSwapChain::InitializeSurface(renderer_platform& Platform)
 {

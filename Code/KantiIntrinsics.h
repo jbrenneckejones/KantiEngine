@@ -174,6 +174,13 @@ Power(real32 X, real32 Y)
 	return (Result);
 }
 
+inline int32
+Power(int32 X, int32 Y)
+{
+	int32 Result = (int32)pow(X, Y);
+	return (Result);
+}
+
 inline real32
 Max(real32 X, real32 Y)
 {

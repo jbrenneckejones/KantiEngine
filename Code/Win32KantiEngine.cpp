@@ -9,12 +9,14 @@
 #include "KantiVulkan/KantiVulkan.h"
 #include "KantiVulkan/KantiVulkan.cpp"
 #include "KantiPrimitives.h"
-#include "KantiMemoryManager.h"
-#include "KantiRenderManager.h"
-#include "KantiTimeManager.h"
+#include "KantiManagers/KantiMemoryManager.h"
+#include "KantiManagers/KantiRenderManager.h"
+#include "KantiManagers/KantiTimeManager.h"
 
-#include "KantiInputManager.h"
-#include "KantiCameraManager.h"
+#include "KantiManagers/KantiInputManager.h"
+#include "KantiManagers/KantiCameraManager.h"
+
+#include "KantiManagers/KantiSoundManager.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -496,6 +498,9 @@ WinMain(HINSTANCE Instance, HINSTANCE PreviousInstance, LPSTR CommandLine, int S
 	KList <uint32> Indices;
 	SetCubeVertex(Verts, Indices);
 
+	KantiSoundManager Sound = KantiSoundManager();
+	
+
 	if(RegisterClassA(&WindowClass))
 	{
 		HWND Window = CreateWindowExA(0, WindowClass.lpszClassName, "KantiEngine",
@@ -503,6 +508,8 @@ WinMain(HINSTANCE Instance, HINSTANCE PreviousInstance, LPSTR CommandLine, int S
 
 		if(Window)
 		{
+			Sound.Initialize(Window);
+
 			GlobalRunning = true;
 
 			renderer_platform Info = {};

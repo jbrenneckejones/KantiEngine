@@ -1856,11 +1856,18 @@ class Quaternion
 		Result.E[2].E[2] = 1.0f - (txx + tyy);
 
 		return Result;
-	}	inline Matrix4x4 ToMatrix()
+	}
+
+	inline Matrix4x4 ToMatrix()
 	{
-		Matrix4x4 Result = ToMatrix(*this);
+		Matrix4x4 Result = ToMatrix(*this);
+
 		return (Result);
-	}	inline k_internal Quaternion FromMatrix(Matrix4x4 Matrix)	{		Quaternion Result = {};
+	}
+
+	inline k_internal Quaternion FromMatrix(Matrix4x4 Matrix)
+	{
+		Quaternion Result = {};
 		Result.W = SquareRoot(Max(0.0f, 1.0f + Matrix.E[0].E[0] + Matrix.E[1].E[1] + Matrix.E[2].E[2])) / 2.0f;
 		Result.X = SquareRoot(Max(0.0f, 1.0f + Matrix.E[0].E[0] - Matrix.E[1].E[1] - Matrix.E[2].E[2])) / 2.0f;
 		Result.Y = SquareRoot(Max(0.0f, 1.0f - Matrix.E[0].E[0] + Matrix.E[1].E[1] - Matrix.E[2].E[2])) / 2.0f;
@@ -1869,7 +1876,10 @@ class Quaternion
 		Result.Y *= SignOf(Result.Y * (Matrix.E[0].E[2] - Matrix.E[2].E[0]));
 		Result.Z *= SignOf(Result.Z * (Matrix.E[1].E[0] - Matrix.E[0].E[1]));
 
-		return (Result);	}	inline k_internal Quaternion Lerp(Quaternion A, real32 Value, Quaternion B)
+		return (Result);
+	}
+
+	inline k_internal Quaternion Lerp(Quaternion A, real32 Value, Quaternion B)
 	{
 		// Lerp is only defined in [0, 1]
 		Assert(Value >= 0.0f);
@@ -1878,7 +1888,9 @@ class Quaternion
 		Quaternion Result = A * (1.0f - Value) + (B * Value);
 
 		return (Result);
-	}	inline k_internal Quaternion Slerp(Quaternion A, real32 Value, Quaternion B)
+	}
+
+	inline k_internal Quaternion Slerp(Quaternion A, real32 Value, Quaternion B)
 	{
 		Quaternion Current = B;
 
@@ -1914,12 +1926,16 @@ class Quaternion
 
 			return (Result);
 		}
-	}	inline Quaternion Slerp(real32 Value, Quaternion B)
+	}
+
+	inline Quaternion Slerp(real32 Value, Quaternion B)
 	{
 		Quaternion Result = Slerp(*this, Value, B);
 
 		return(Result);
-	}	inline k_internal real32 Roll(Quaternion Quat)
+	}
+
+	inline k_internal real32 Roll(Quaternion Quat)
 	{
 		real32 A = 2.0f * (Quat.X * Quat.Y + Quat.W * Quat.Z);
 		real32 B = Square(Quat.W) + Square(Quat.X) - Square(Quat.Y) - Square(Quat.Z);
@@ -1946,7 +1962,30 @@ class Quaternion
 		real32 Result = ASin(Clamp(-1.0f, A, 1.0f));
 
 		return (Result);
-	}	inline k_internal Vector3 ToEuler(Quaternion Quat)	{		Vector3 Result = {};		Result.X = Pitch(Quat);		Result.Y = Yaw(Quat);		Result.Z = Roll(Quat);		return (Result);	}	inline Vector3 ToEuler()	{		Vector3 Result = {};		Result.X = Pitch(*this);		Result.Y = Yaw(*this);		Result.Z = Roll(*this);		return (Result);	}
+	}
+
+	inline k_internal Vector3 ToEuler(Quaternion Quat)
+	{
+		Vector3 Result = {};
+
+		Result.X = Pitch(Quat);
+		Result.Y = Yaw(Quat);
+		Result.Z = Roll(Quat);
+
+		return (Result);
+	}
+
+	inline Vector3 ToEuler()
+	{
+		Vector3 Result = {};
+
+		Result.X = Pitch(*this);
+		Result.Y = Yaw(*this);
+		Result.Z = Roll(*this);
+
+		return (Result);
+	}
+
 };
 
 #define KANTI_MATH

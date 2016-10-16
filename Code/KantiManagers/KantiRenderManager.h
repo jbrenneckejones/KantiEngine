@@ -55,6 +55,7 @@ class KantiRenderObject
 
 	render_matrices RenderMatrices;
 	Vector3 Position;
+	Quaternion Rotation;
 	Vector3 Color;
 
 	VulkanBuffer VertexBuffer;

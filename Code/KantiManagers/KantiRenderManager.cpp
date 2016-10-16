@@ -12,6 +12,8 @@
 
 #include "KantiCameraManager.h"
 
+#include "KantiFileManager.h"
+
 void KantiRenderObject::PrepareUniformBuffer(VulkanEncapsulatedDevice* Device)
 {
 	// Vertex shader uniform buffer block
@@ -63,6 +65,7 @@ void KantiRenderObject::UpdateUniformBuffer(VulkanEncapsulatedDevice* Device, Ka
 	// Matrix4x4 UBO = ((RenderMatrices.Projection * RenderMatrices.View) * RenderMatrices.Model) * Position;
 
 	RenderMatrices.Model.Translate(Position);
+	RenderMatrices.Model = RenderMatrices.Model * Rotation.ToMatrix();
 	// Rotation.Z = (rotSpeed * timer) + rotOffset;
 	// RenderMatrices.Model = Rotate(RenderMatrices.Model, ToRadians(rotation.z), Vector3(0.0f, 0.0f, 1.0f));
 
@@ -97,7 +100,12 @@ void KantiRenderObject::Generate(VulkanEncapsulatedDevice* Device, VkQueue Queue
 	KList<vertex> vBuffer;
 	KList<uint32> iBuffer;
 
-	SetCubeVertex(vBuffer, iBuffer);
+	// SetCubeVertex(vBuffer, iBuffer);
+	render_data RenderData = {};
+	KantiFileManager::LoadOBJFile("Hexagon Shape.obj", RenderData);
+	// Pyrimid->VertexBuffer.
+	vBuffer = RenderData.Vertices;
+	iBuffer = RenderData.Indices;
 
 	for(uint32 Index = 0; Index < vBuffer.Count(); ++Index)
 	{
