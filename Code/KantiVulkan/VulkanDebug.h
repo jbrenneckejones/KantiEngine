@@ -1,7 +1,5 @@
 #ifndef VULKAN_DEBUG
 
-#include "KantiVulkan.h"
-
 inline VkBool32
 DebugMessageCallback(
 	VkDebugReportFlagsEXT Flags,
@@ -15,23 +13,11 @@ DebugMessageCallback(
 {
 	// Select prefix depending on flags passed to the callback
 	// Note that multiple flags may be set for a single validation message
-	k_string Prefix;
+	KString Prefix;
 
-	uint32 CountPrefix = 0;
-	for(const char* Character = LayerPrefix; *Character; ++Character)
-	{
-		CountPrefix++;
-	}
+	KString LayerPrefixString(LayerPrefix);
 
-	k_string LayerPrefixString((char *)LayerPrefix, CountPrefix);
-
-	uint32 CountMessage = 0;
-	for(const char* Character = Message; *Character; ++Character)
-	{
-		CountMessage++;
-	}
-
-	k_string MessageString((char *)Message, CountMessage);
+	KString MessageString(Message);
 
 	// Error that may result in undefined behaviour
 	if (Flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
@@ -67,7 +53,7 @@ DebugMessageCallback(
 	DebugMessage(LayerPrefixString);
 	DebugMessage("] Code ");
 
-	k_string Code = '0' + MessageCode;
+	KString Code = '0' + MessageCode;
 	DebugMessage(Code);
 	DebugMessage(" : ");
 	DebugMessage(MessageString);

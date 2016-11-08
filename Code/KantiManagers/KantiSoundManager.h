@@ -1,17 +1,15 @@
 #ifndef KANTI_SOUND_MANAGER
 
-#include "../KantiPlatform.h"
-#include "KantiFileManager.h"
-#include <initguid.h>
-#include <dsound.h>
-#include <stdio.h>
 
-#define DIRECT_SOUND_CREATE(name) HRESULT WINAPI name(LPCGUID pcGuidDevice, LPDIRECTSOUND *ppDS, LPUNKNOWN pUnkOuter)
-typedef DIRECT_SOUND_CREATE(direct_sound_create);
+
+// #define DIRECT_SOUND_CREATE(name) HRESULT WINAPI name(LPCGUID pcGuidDevice, LPDIRECTSOUND *ppDS, LPUNKNOWN pUnkOuter)
+// typedef DIRECT_SOUND_CREATE(direct_sound_create);
 
 class KantiSoundManager
 {
 public:
+
+	/*
 
 	struct sound_id
 	{
@@ -73,8 +71,11 @@ public:
 
 	}
 
-	inline bool Initialize(HWND Window)
+	*/
+
+	inline bool Initialize(void* Window)
 	{
+		/*
 		bool result;
 
 
@@ -100,7 +101,14 @@ public:
 		}
 
 		return true;
+
+		*/
+
+		return true;
 	}
+	
+	/*
+
 	inline void Shutdown()
 	{
 		// Release the secondary buffer.
@@ -197,6 +205,7 @@ public:
 		return;
 	}
 
+	
 	inline bool LoadWaveFile(char* FileName, IDirectSoundBuffer8** secondaryBuffer)
 	{
 		int error;
@@ -444,7 +453,10 @@ public:
 	IDirectSound8* m_DirectSound;
 	IDirectSoundBuffer* m_primaryBuffer;
 	IDirectSoundBuffer8* m_secondaryBuffer1;
+
+	*/
 };
+
 
 
 #define KANTI_SOUND_MANAGER

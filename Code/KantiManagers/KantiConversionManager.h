@@ -1,8 +1,5 @@
 #ifndef KANTI_CONVERTER
 
-#include "KantiPlatform.h"
-#include "KantiMemoryManager.h"
-
 //
 // Conversion operations
 //

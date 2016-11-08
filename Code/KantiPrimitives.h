@@ -1,21 +1,20 @@
 #ifndef KANTI_PRIMITIVES
 
-#include "KantiPlatform.h"
-
-k_internal void SetCubeVertex(KList<vertex>& Vertices, KList<uint32>& Indices)
+k_internal void SetCubeVertex(KList<KVertex>& Vertices, KList<uint32>& Indices)
 {
-	local_persist KList<vertex> CubeVertices
+	/*
+	local_persist KList<KVertex> CubeVertices
 	{
 		// front
-		{ Vector3(-1.0f, -1.0f,  1.0f), Vector3(1.0f, 1.0f, 1.0f) },
-		{ Vector3(1.0f, -1.0f,  1.0f), Vector3(1.0f, 1.0f, 1.0f) },
-		{ Vector3(1.0f,  1.0f,  1.0f), Vector3(1.0f, 1.0f, 1.0f) },
-		{ Vector3(-1.0f,  1.0f,  1.0f), Vector3(1.0f, 1.0f, 1.0f) },
+		{ KVector3(-1.0f, -1.0f,  1.0f), KVector3(1.0f, 1.0f, 1.0f) },
+		{ KVector3(1.0f, -1.0f,  1.0f), KVector3(1.0f, 1.0f, 1.0f) },
+		{ KVector3(1.0f,  1.0f,  1.0f), KVector3(1.0f, 1.0f, 1.0f) },
+		{ KVector3(-1.0f,  1.0f,  1.0f), KVector3(1.0f, 1.0f, 1.0f) },
 		// back
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(1.0f, 1.0f, 1.0f) },
-		{ Vector3(1.0f, -1.0f, -1.0f), Vector3(1.0f, 1.0f, 1.0f) },
-		{ Vector3(1.0f,  1.0f, -1.0f), Vector3(1.0f, 1.0f, 1.0f) },
-		{ Vector3(-1.0f,  1.0f, -1.0f), Vector3(1.0f, 1.0f, 1.0f) },
+		{ KVector3(-1.0f, -1.0f, -1.0f), KVector3(1.0f, 1.0f, 1.0f) },
+		{ KVector3(1.0f, -1.0f, -1.0f), KVector3(1.0f, 1.0f, 1.0f) },
+		{ KVector3(1.0f,  1.0f, -1.0f), KVector3(1.0f, 1.0f, 1.0f) },
+		{ KVector3(-1.0f,  1.0f, -1.0f), KVector3(1.0f, 1.0f, 1.0f) },
 	};
 
 	Vertices = CubeVertices;
@@ -43,6 +42,7 @@ k_internal void SetCubeVertex(KList<vertex>& Vertices, KList<uint32>& Indices)
 	};
 
 	Indices = CubeIndices;
+	*/
 }
 
 #define KANTI_PRIMITIVES

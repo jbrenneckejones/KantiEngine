@@ -2,6 +2,7 @@
 
 // #ifdef __cplusplus
 // extern "C" {
+// extern "C" {
 // #endif
 
 //
@@ -71,17 +72,17 @@ class KList;
 template <typename T, typename ContainerType>
 class KDictionary;
 
-typedef KList<char> k_string;
+class KString;
 
-class Vector2;
+class KVector2;
 
-class Vector3;
+class KVector3;
 
-class Vector4;
+class KVector4;
 
-class Matrix4x4;
+class KMatrix4x4;
 
-class Quaternion;
+class KQuaternion;
 
 #define Real32Maximum FLT_MAX
 #define Real32Minimum -FLT_MAX
@@ -109,7 +110,7 @@ class Quaternion;
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
-// TODO(casey): swap, min, max ... macros???
+// TODO(Julian): swap, min, max ... macros???
 
 #define AlignPow2(Value, Alignment) ((Value + ((Alignment) - 1)) & ~((Alignment) - 1))
 #define Align4(Value) ((Value + 3) & ~3)
@@ -133,7 +134,6 @@ SafeTruncateToU16(uint32 Value)
 	uint16 Result = (uint16)Value;
 	return(Result);
 }
-
 
 #define KANTI_PLATFORM
 #endif

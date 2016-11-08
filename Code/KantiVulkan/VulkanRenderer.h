@@ -1,21 +1,4 @@
-#include "../KantiManagers/KantiFileManager.h"
-#include "KantiVulkan.h"
-#include "VulkanSwapChain.h"
-#include "VulkanSwapChain.cpp"
-#include "VulkanBuffer.h"
-#include "VulkanBuffer.cpp"
-#include "VulkanCommandBuffer.h"
-#include "VulkanCommandBuffer.cpp"
-#include "VulkanDebug.h"
-#include "VulkanDebug.cpp"
-#include "VulkanEncapsulatedDevice.h"
-#include "VulkanEncapsulatedDevice.cpp"
-#include "../KantiManagers/KantiRenderManager.h"
-#include "../KantiManagers/KantiRenderManager.cpp"
-#include "../KantiManagers/KantiFileManager.h"
-#include "../KantiManagers/KantiInputManager.h"
-#include "../KantiManagers/KantiRandomManager.h"
-#include "../KantiManagers/KantiCameraManager.h"
+#ifndef VULKAN_RENDERER
 
 struct vulkan_base_properties
 {
@@ -34,7 +17,7 @@ struct vulkan_base_properties
 	uint32 DestinationWidth;
 	uint32 DestinationHeight;
 
-	k_string ApplicationName;
+	KString ApplicationName;
 };
 
 struct vulkan_rendering_properties
@@ -67,11 +50,119 @@ struct vulkan_rendering_properties
 	}
 };
 
+struct uniform_data
+{
+	VkBuffer Buffer;
+	VkDeviceMemory Memory;
+	VkDescriptorBufferInfo Descriptor;
+	uint32 AllocSize;
+	void* Mapped = nullptr;
+};
+
+struct VKMeshBufferInfo
+{
+	VkBuffer Buffer = VK_NULL_HANDLE;
+	VkDeviceMemory Memory = VK_NULL_HANDLE;
+	memory_index Size = 0;
+};
+
+/** @brief Stores a mesh's vertex and index descriptions */
+struct VKMeshDescriptor
+{
+	uint32 VertexCount;
+	uint32 IndexBase;
+	uint32 IndexCount;
+};
+
+/** @brief Mesh representation storing all data required to generate buffers */
+struct VKMeshBuffer
+{
+	KMeshRenderer* Mesh;
+	KList<VKMeshDescriptor> MeshDescriptors;
+	VKMeshBufferInfo Vertices;
+	VKMeshBufferInfo Indices;
+	uint32 IndexCount;
+	KVector3 Dim;
+};
+
+// Stores some additonal info and functions for 
+// specifying pipelines, vertex bindings, etc.
+class VKMesh
+{
+public:
+
+	VKMeshBuffer Buffers;
+
+	VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
+	VkPipeline Pipeline = VK_NULL_HANDLE;
+	VkDescriptorSet DescriptorSet = VK_NULL_HANDLE;
+
+	uint32 VertexBufferBinding = 0;
+
+	VkPipelineVertexInputStateCreateInfo VertexInputState;
+	VkVertexInputBindingDescription BindingDescription;
+	KList<VkVertexInputAttributeDescription> AttributeDescriptions;
+
+	void DrawIndexed(VkCommandBuffer DrawCommandBuffer)
+	{
+		VkDeviceSize Offsets[1] = { 0 };
+		if (Pipeline != VK_NULL_HANDLE)
+		{
+			vkCmdBindPipeline(DrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline);
+		}
+		if ((PipelineLayout != VK_NULL_HANDLE) && (DescriptorSet != VK_NULL_HANDLE))
+		{
+			vkCmdBindDescriptorSets(DrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSet, 0, NULL);
+		}
+		vkCmdBindVertexBuffers(DrawCommandBuffer, VertexBufferBinding, 1, &Buffers.Vertices.Buffer, Offsets);
+		vkCmdBindIndexBuffer(DrawCommandBuffer, Buffers.Indices.Buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(DrawCommandBuffer, Buffers.IndexCount, 1, 0, 0, 0);
+	}
+};
+
+static void FreeMeshBufferResources(VkDevice Device, VKMeshBuffer* MeshBuffer)
+{
+	vkDestroyBuffer(Device, MeshBuffer->Vertices.Buffer, nullptr);
+	vkFreeMemory(Device, MeshBuffer->Vertices.Memory, nullptr);
+	if (MeshBuffer->Indices.Buffer != VK_NULL_HANDLE)
+	{
+		vkDestroyBuffer(Device, MeshBuffer->Indices.Buffer, nullptr);
+		vkFreeMemory(Device, MeshBuffer->Indices.Memory, nullptr);
+	}
+}
+
+
+
+class VulkanRenderObject
+{
+public:
+
+	KMeshRenderer* MeshInfo;
+	VulkanBuffer VertexBuffer;
+	VulkanBuffer IndexBuffer;
+	uint32 IndexCount;
+	uniform_data UniformData;
+
+	// TODO(Julian): Maybe don't need this?
+	VkDescriptorSet DescriptorSet;
+
+public:
+
+	void PrepareUniformBuffer(VulkanEncapsulatedDevice* Device);
+
+	void Draw(VkCommandBuffer DrawCommandBuffer, VkPipelineLayout PipelineLayout);
+
+	void UpdateUniformBuffer(VulkanEncapsulatedDevice* Device);
+
+	void SetupDescriptorSet(VulkanRenderer* Renderer);
+
+	void Generate(VulkanEncapsulatedDevice* Device, VkQueue Queue);
+
+};
+
 class VulkanRenderer
 {
-	public:
-
-	KList<KantiRenderObject*> Meshes;
+public:
 
 	VulkanEncapsulatedDevice* Device;
 
@@ -85,10 +176,12 @@ class VulkanRenderer
 
 	vulkan_rendering_properties RenderProperties;
 
+	std::map<UniqueID, VulkanRenderObject*> Meshes;
+
 	// Synchronization semaphores
 	struct
 	{
-// Swap chain image presentation
+		// Swap chain image presentation
 		VkSemaphore PresentComplete;
 		// Command buffer submission and execution
 		VkSemaphore RenderComplete;
@@ -115,12 +208,36 @@ class VulkanRenderer
 
 	VkDescriptorSetLayout DescriptorSetLayout;
 
+	struct {
+		uniform_data Scene;
+		uniform_data Offscreen;
+	} UniformData;
+
+	struct {
+		VkDescriptorSet Offscreen;
+		VkDescriptorSet Scene;
+	} DescriptorSets;
+
 	struct
 	{
 		VkImage Image;
 		VkDeviceMemory Memory;
 		VkImageView View;
 	} DepthStencil;
+
+	// Framebuffer for offscreen rendering
+	struct FrameBufferAttachment {
+		VkImage Image;
+		VkDeviceMemory Memory;
+		VkImageView View;
+	};
+	struct FrameBuffer {
+		int32 Width, Height;
+		VkFramebuffer Buffer;
+		FrameBufferAttachment Color, Depth;
+		VkRenderPass RenderPass;
+		VkSampler DepthSampler;
+	} OffScreenFrameBuffer;
 
 	VulkanRenderer(renderer_platform& Platform, vulkan_base_properties& Properties)
 	{
@@ -149,7 +266,7 @@ class VulkanRenderer
 
 		// Enable console if validation is active
 		// Debug message callback will output to it
-		if(Properties.EnableValidation)
+		if (Properties.EnableValidation)
 		{
 			// setupConsole("VulkanExample");
 		}
@@ -176,16 +293,16 @@ class VulkanRenderer
 		InstanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		InstanceCreateInfo.pNext = NULL;
 		InstanceCreateInfo.pApplicationInfo = &ApplicationInfo;
-		if(EnabledExtensions.Count() > 0)
+		if (EnabledExtensions.Count() > 0)
 		{
-			if(VulkanEnableValidation)
+			if (VulkanEnableValidation)
 			{
 				EnabledExtensions.PushBack(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 			}
 			InstanceCreateInfo.enabledExtensionCount = EnabledExtensions.Count();
 			InstanceCreateInfo.ppEnabledExtensionNames = EnabledExtensions.Data();
 		}
-		if(VulkanEnableValidation)
+		if (VulkanEnableValidation)
 		{
 			KList<const char*> ValidationLayerNames;
 			// This is a meta layer that enables all of the standard
@@ -200,7 +317,7 @@ class VulkanRenderer
 	}
 
 	// Returns the base asset path (for shaders, models, textures) depending on the os
-	k_string GetAssetPath()
+	KString GetAssetPath()
 	{
 		return "./../Data/";
 	}
@@ -208,7 +325,7 @@ class VulkanRenderer
 	// Called if the window is resized and some resources have to be recreatesd
 	void WindowResize()
 	{
-		if(!RenderProperties.Prepared)
+		if (!RenderProperties.Prepared)
 		{
 			return;
 		}
@@ -227,7 +344,7 @@ class VulkanRenderer
 		vkFreeMemory(Device->LogicalDevice, DepthStencil.Memory, nullptr);
 		SetupDepthStencil();
 
-		for(uint32 Index = 0; Index < CommandBuffer.FrameBuffersCount; Index++)
+		for (uint32 Index = 0; Index < CommandBuffer.FrameBuffersCount; Index++)
 		{
 			vkDestroyFramebuffer(Device->LogicalDevice, CommandBuffer.FrameBuffers[Index], nullptr);
 		}
@@ -252,13 +369,11 @@ class VulkanRenderer
 		CommandInfo.Pipeline = Pipelines.Solid;
 		CommandInfo.PipelineLayout = RenderProperties.PipelineLayout;
 
-		CommandBuffer.BuildCommandBuffers(CommandInfo, KList<k_object>());
+		CommandBuffer.BuildCommandBuffers(CommandInfo, Meshes);
 		CommandBuffer.BuildPresentCommandBuffers(&SwapChain);
 
 		vkQueueWaitIdle(Queue);
 		vkDeviceWaitIdle(Device->LogicalDevice);
-
-		// camera.updateAspectRatio((float)width / (float)height);
 
 		// Notify derived class
 		WindowResized();
@@ -296,7 +411,7 @@ class VulkanRenderer
 
 		// Enable console if validation is active
 		// Debug message callback will output to it
-		if(VulkanEnableValidation)
+		if (VulkanEnableValidation)
 		{
 			// setupConsole("VulkanExample");
 		}
@@ -353,7 +468,7 @@ class VulkanRenderer
 	*/
 
 	// Get window title with example name, device, et.
-	k_string GetWindowTitle()
+	KString GetWindowTitle()
 	{
 		return BaseProperties.ApplicationName;
 	}
@@ -365,13 +480,13 @@ class VulkanRenderer
 
 		// Vulkan instance
 		Error = CreateInstance(VulkanEnableValidation);
-		if(Error)
+		if (Error)
 		{
 			K_ERROR(Error);
 		}
 
 		// If requested, we enable the default validation layers for debugging
-		if(VulkanEnableValidation)
+		if (VulkanEnableValidation)
 		{
 			// The report flags determine what type of messages for the layers will be displayed
 			// For validating (debugging) an appplication the error and warning bits should suffice
@@ -436,7 +551,7 @@ class VulkanRenderer
 	// Pure virtual render function (override in derived class)
 	void Render()
 	{
-		if(!RenderProperties.Prepared)
+		if (!RenderProperties.Prepared)
 		{
 			return;
 		}
@@ -444,7 +559,7 @@ class VulkanRenderer
 		vkDeviceWaitIdle(Device->LogicalDevice);
 		Draw();
 		vkDeviceWaitIdle(Device->LogicalDevice);
-		if(!RenderProperties.Paused)
+		if (!RenderProperties.Paused)
 		{
 			UpdateUniformBuffers();
 		}
@@ -586,6 +701,7 @@ class VulkanRenderer
 	{
 		SwapChain.InitializeSurface(*Device->Platform);
 	}
+
 	// Create swap chain images
 	void CreateSwapChainImages()
 	{
@@ -600,10 +716,11 @@ class VulkanRenderer
 		InitializeSwapchain();
 
 		// TODO(Julian): Sort these
-		if(BaseProperties.EnableDebugMarkers)
+		if (BaseProperties.EnableDebugMarkers)
 		{
 			Debug.SetupDebug(Device->LogicalDevice);
 		}
+
 		CommandBuffer.CreateCommandPool(&SwapChain, Device->LogicalDevice);
 		CommandBuffer.CreateSetupCommandBuffer(Device->LogicalDevice);
 		CreateSwapChainImages();
@@ -631,9 +748,12 @@ class VulkanRenderer
 		RenderProperties.Prepared = true;
 	}
 
-	VkShaderModule LoadShader(k_string FileName, VkDevice VulkanDevice, VkShaderStageFlagBits ShaderStage)
+	VkShaderModule LoadShader(KString FileName, VkDevice VulkanDevice, VkShaderStageFlagBits ShaderStage)
 	{
-		k_string Result;
+		KString Directory = __FILE__;
+
+
+		KString Result;
 
 		Result = GetFileContents(FileName);
 
@@ -653,7 +773,7 @@ class VulkanRenderer
 	}
 
 	// Load a SPIR-V shader
-	VkPipelineShaderStageCreateInfo LoadShader(k_string FileName, VkShaderStageFlagBits ShaderStage)
+	VkPipelineShaderStageCreateInfo LoadShader(KString FileName, VkShaderStageFlagBits ShaderStage)
 	{
 		VkPipelineShaderStageCreateInfo ShaderStageCreateInfo = {};
 		ShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -741,6 +861,11 @@ class VulkanRenderer
 	void ExtraPrepare()
 	{
 		PrepareVertices();
+
+		// PrepareOffscreenFramebuffer();
+
+		// PrepareUniformBuffers();
+
 		SetupDescriptorSetLayout();
 		PreparePipelines();
 		SetupDescriptorPool();
@@ -751,101 +876,113 @@ class VulkanRenderer
 
 	void PrepareVertices()
 	{
-		// Gear definitions
-		/*
-		k_list<Vector3> Colors = {
-		Vector3(1.0f, 0.0f, 0.0f),
-		Vector3(0.0f, 1.0f, 0.2f),
-		Vector3(0.0f, 0.0f, 1.0f)
-		};
-
-		k_list<Vector3> Positions = {
-			Vector3(-3.0f, 0.0f, 0.0f),
-				Vector3(3.1f, 0.0f, 0.0f),
-				Vector3(-3.1f, -6.2f, 0.0f)
-		};
-		*/
-
-		KList<Vector3> Colors = {};
-
-		KList<Vector3> Positions = {};
-
-
-		uint32 GridX = 0;
-		uint32 GridZ = 0;
-
-		real32 Distance = 2.0f;
-
-		for(uint32 Index = 0; Index < 100; ++Index)
-		{
-			Positions.PushBack(Vector3((real32)GridX * Distance, KantiRandomManager::RandomRangeUniform(0.0f, 1.0f), (real32)GridZ * Distance));
-			Colors.PushBack(Vector3(
-				KantiRandomManager::RandomRangeUniform(0.0f, 1.0f),
-				KantiRandomManager::RandomRangeUniform(0.0f, 1.0f),
-				KantiRandomManager::RandomRangeUniform(0.0f, 1.0f)));
-
-			GridX++;
-
-			if(GridX > 25)
-			{
-				GridX = 0;
-				GridZ++;
-			}
-		}
-
-
-		Meshes.Resize(Positions.Count());
-
-		for(uint32 Index = 0; Index < Meshes.Count(); ++Index)
-		{
-			Meshes[Index] = new KantiRenderObject();
-			Meshes[Index]->Position = Positions[Index] * 100;
-			Meshes[Index]->Rotation = Quaternion::FromAxisAngle(Vector3(1.0f, 0.0f, 0.0f), 180.0f);
-			Meshes[Index]->Color = Colors[Index];
-			Meshes[Index]->Generate(Device, Queue);
-		}
-
 		// Binding and attribute descriptions are shared across all meshes
 		Vertices.BindingDescriptions.Resize(1);
-		Vertices.BindingDescriptions[0] = CreateVertexInputBindingDescription(0, sizeof(vertex), VK_VERTEX_INPUT_RATE_VERTEX);
+		Vertices.BindingDescriptions[0] = CreateVertexInputBindingDescription(0, sizeof(KVertex), VK_VERTEX_INPUT_RATE_VERTEX);
+
+		// TODO(Julian): Turn these into automatic functions
 
 		// Attribute descriptions
 		// Describes memory layout and shader positions
-		Vertices.AttributeDescriptions.Resize(2);
+		Vertices.AttributeDescriptions.Resize(4);
 		// Location 0 : Position
 		Vertices.AttributeDescriptions[0] =
 			CreateVertexInputAttributeDescription(
-			0,
-			0,
-			VK_FORMAT_R32G32B32_SFLOAT,
-			0);
-		// TODO(Julian): Turn these into automatic functions
+				0,
+				0,
+				VK_FORMAT_R32G32B32_SFLOAT,
+				0);
 		// Location 1 : Normal
 		Vertices.AttributeDescriptions[1] =
 			CreateVertexInputAttributeDescription(
-			0,
-			1,
-			VK_FORMAT_R32G32B32_SFLOAT,
-			sizeof(real32) * 3);
-		/*
-		// Location 2 : Color
+				0,
+				1,
+				VK_FORMAT_R32G32B32_SFLOAT,
+				sizeof(real32) * 3);
+
+		// Location 2 : Texture coordinates
 		Vertices.AttributeDescriptions[2] =
 			CreateVertexInputAttributeDescription(
-			0,
-			2,
-			VK_FORMAT_R32G32B32_SFLOAT,
-			sizeof(real32) * 6);
-			*/
+				0,
+				2,
+				VK_FORMAT_R32G32_SFLOAT,
+				sizeof(real32) * 6);
+		
+		// Location 3 : Color
+		Vertices.AttributeDescriptions[3] =
+			CreateVertexInputAttributeDescription(
+				0,
+				3,
+				VK_FORMAT_R32G32B32_SFLOAT,
+				sizeof(real32) * 8);
 
-		Vertices.InputState = CreatePipelineVertexInputStateInfo();
+		Vertices.InputState = CreatePipelineVertexInputStateCreateInfo();
 		Vertices.InputState.vertexBindingDescriptionCount = Vertices.BindingDescriptions.Count();
 		Vertices.InputState.pVertexBindingDescriptions = Vertices.BindingDescriptions.Data();
 		Vertices.InputState.vertexAttributeDescriptionCount = Vertices.AttributeDescriptions.Count();
 		Vertices.InputState.pVertexAttributeDescriptions = Vertices.AttributeDescriptions.Data();
 	}
 
+	// Set up a separate render pass for the offscreen frame buffer
+	// This is necessary as the offscreen frame buffer attachments
+	// use formats different to the ones from the visible frame buffer
+	// and at least the depth one may not be compatible
+	void PrepareOffscreenRenderpass()
+	{
+		VkAttachmentDescription AttachmentDescription[2];
+		AttachmentDescription[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+		AttachmentDescription[0].samples = VK_SAMPLE_COUNT_1_BIT;
+		AttachmentDescription[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		// We only need depth information for shadow mapping
+		// So we don't need to store the color information
+		// after the render pass has finished
+		AttachmentDescription[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		AttachmentDescription[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		AttachmentDescription[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		AttachmentDescription[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		AttachmentDescription[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		AttachmentDescription[0].flags = VK_FLAGS_NONE;
+
+		AttachmentDescription[1].format = VK_FORMAT_D16_UNORM;
+		AttachmentDescription[1].samples = VK_SAMPLE_COUNT_1_BIT;
+		AttachmentDescription[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		// Since we need to copy the depth attachment contents to our texture
+		// used for shadow mapping we must use STORE_OP_STORE to make sure that
+		// the depth attachment contents are preserved after rendering to it 
+		// has finished
+		AttachmentDescription[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		AttachmentDescription[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		AttachmentDescription[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		AttachmentDescription[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		AttachmentDescription[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		AttachmentDescription[1].flags = VK_FLAGS_NONE;
+
+		VkAttachmentReference ColorReference = {};
+		ColorReference.attachment = 0;
+		ColorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentReference DepthReference = {};
+		DepthReference.attachment = 1;
+		DepthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription Subpass = {};
+		Subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		Subpass.colorAttachmentCount = 1;
+		Subpass.pColorAttachments = &ColorReference;
+		Subpass.pDepthStencilAttachment = &DepthReference;
+
+		VkRenderPassCreateInfo RenderPassCreateInfo = CreateRenderPassCreateInfo();
+		RenderPassCreateInfo.attachmentCount = 2;
+		RenderPassCreateInfo.pAttachments = AttachmentDescription;
+		RenderPassCreateInfo.subpassCount = 1;
+		RenderPassCreateInfo.pSubpasses = &Subpass;
+
+		VK_CHECK_RESULT(vkCreateRenderPass(Device->LogicalDevice, &RenderPassCreateInfo, nullptr, &OffScreenFrameBuffer.RenderPass));
+	}
+
 	void SetupDescriptorSetLayout()
 	{
+		/*
 		KList<VkDescriptorSetLayoutBinding> SetLayoutBindings =
 		{
 			// Binding 0 : Vertex shader uniform buffer
@@ -854,18 +991,33 @@ class VulkanRenderer
 			VK_SHADER_STAGE_VERTEX_BIT,
 			0)
 		};
+		*/
+
+		KList<VkDescriptorSetLayoutBinding> SetLayoutBindings =
+		{
+			// Binding 0 : Vertex shader uniform buffer
+			CreateDescriptorSetLayoutBinding(
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+				VK_SHADER_STAGE_VERTEX_BIT,
+				0),
+			// Binding 1 : Fragment shader image sampler
+			CreateDescriptorSetLayoutBinding(
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				VK_SHADER_STAGE_FRAGMENT_BIT,
+				1)
+		};
 
 		VkDescriptorSetLayoutCreateInfo DescriptorLayout =
 			CreateDescriptorSetLayoutCreateInfo(
-			SetLayoutBindings.Data(),
-			SetLayoutBindings.Count());
+				SetLayoutBindings.Data(),
+				SetLayoutBindings.Count());
 
 		VK_CHECK_RESULT(vkCreateDescriptorSetLayout(Device->LogicalDevice, &DescriptorLayout, nullptr, &DescriptorSetLayout));
 
 		VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo =
 			CreatePipelineLayoutCreateInfo(
-			&DescriptorSetLayout,
-			1);
+				&DescriptorSetLayout,
+				1);
 
 		VK_CHECK_RESULT(vkCreatePipelineLayout(Device->LogicalDevice, &PipelineLayoutCreateInfo, nullptr, &RenderProperties.PipelineLayout));
 	}
@@ -874,62 +1026,63 @@ class VulkanRenderer
 	{
 		VkPipelineInputAssemblyStateCreateInfo InputAssemblyState =
 			CreatePipelineInputAssemblyStateCreateInfo(
-			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-			0,
-			VK_FALSE);
+				VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+				0,
+				VK_FALSE);
 
 		VkPipelineRasterizationStateCreateInfo RasterizationState =
 			CreatePipelineRasterizationStateCreateInfo(
-			VK_POLYGON_MODE_FILL,
-			VK_CULL_MODE_BACK_BIT,
-			VK_FRONT_FACE_CLOCKWISE,
-			0);
+				VK_POLYGON_MODE_FILL,
+				VK_CULL_MODE_NONE,
+				// VK_CULL_MODE_BACK_BIT,
+				VK_FRONT_FACE_CLOCKWISE,
+				0);
 
 		VkPipelineColorBlendAttachmentState BlendAttachmentState =
 			CreatePipelineColorBlendAttachmentState(
-			0xf,
-			VK_FALSE);
+				0xf,
+				VK_FALSE);
 
 		VkPipelineColorBlendStateCreateInfo ColorBlendState =
 			CreatePipelineColorBlendStateCreateInfo(
-			1,
-			&BlendAttachmentState);
+				1,
+				&BlendAttachmentState);
 
 		VkPipelineDepthStencilStateCreateInfo DepthStencilState =
 			CreatePipelineDepthStencilStateCreateInfo(
-			VK_TRUE,
-			VK_TRUE,
-			VK_COMPARE_OP_LESS_OR_EQUAL);
+				VK_TRUE,
+				VK_TRUE,
+				VK_COMPARE_OP_LESS_OR_EQUAL);
 
 		VkPipelineViewportStateCreateInfo ViewportState =
 			CreatePipelineViewportStateCreateInfo(1, 1, 0);
 
 		VkPipelineMultisampleStateCreateInfo MultisampleState =
 			CreatePipelineMultisampleStateCreateInfo(
-			VK_SAMPLE_COUNT_1_BIT,
-			0);
+				VK_SAMPLE_COUNT_1_BIT,
+				0);
 
 		KList<VkDynamicState> DynamicStateEnables = {
 			VK_DYNAMIC_STATE_VIEWPORT,
 			VK_DYNAMIC_STATE_SCISSOR
 		};
 
-		VkPipelineDynamicStateCreateInfo dynamicState =
+		VkPipelineDynamicStateCreateInfo DynamicState =
 			CreatePipelineDynamicStateCreateInfo(
-			DynamicStateEnables.Data(),
-			DynamicStateEnables.Count(),
-			0);
+				DynamicStateEnables.Data(),
+				DynamicStateEnables.Count(),
+				0);
 
 		// Solid rendering pipeline
 		// Load shaders
 		KList<VkPipelineShaderStageCreateInfo> ShaderStages(2);
 
-		k_string VertShader = "./../Data/triangle.vert.spv"; //GetAssetPath();
+		KString VertShader = "./../Data/scene.vert.spv"; //GetAssetPath();
 		// VertShader.PushBack("gears.vert.spv");
 
-		k_string FragShader = "./../Data/triangle.frag.spv"; // GetAssetPath();
+		KString FragShader = "./../Data/scene.frag.spv"; // GetAssetPath();
 		// FragShader.PushBack("gears.frag.spv");
-		ShaderStages[0] = LoadShader(VertShader , VK_SHADER_STAGE_VERTEX_BIT);
+		ShaderStages[0] = LoadShader(VertShader, VK_SHADER_STAGE_VERTEX_BIT);
 		ShaderStages[1] = LoadShader(FragShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		VkGraphicsPipelineCreateInfo PipelineCreateInfo =
@@ -942,7 +1095,7 @@ class VulkanRenderer
 		PipelineCreateInfo.pMultisampleState = &MultisampleState;
 		PipelineCreateInfo.pViewportState = &ViewportState;
 		PipelineCreateInfo.pDepthStencilState = &DepthStencilState;
-		PipelineCreateInfo.pDynamicState = &dynamicState;
+		PipelineCreateInfo.pDynamicState = &DynamicState;
 		PipelineCreateInfo.stageCount = ShaderStages.Count();
 		PipelineCreateInfo.pStages = ShaderStages.Data();
 
@@ -954,32 +1107,33 @@ class VulkanRenderer
 		// One UBO for each gear
 		KList<VkDescriptorPoolSize> PoolSizes =
 		{
-			CreateDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Meshes.Count()),
+			CreateDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 6), // (uint32)Meshes.size()),
+			CreateDescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4) // (uint32)Meshes.size())
 		};
 
 		VkDescriptorPoolCreateInfo DescriptorPoolInfo =
 			CreateDescriptorPoolCreateInfo(
-			PoolSizes.Count(),
-			PoolSizes.Data(),
-			// Three descriptor sets (for each gear)
-			Meshes.Count());
+				PoolSizes.Count(),
+				PoolSizes.Data(),
+				// Three descriptor sets (for each gear)
+				3);// (uint32)Meshes.size());
 
 		VK_CHECK_RESULT(vkCreateDescriptorPool(Device->LogicalDevice, &DescriptorPoolInfo, nullptr, &CommandBuffer.DescriptorPool));
 	}
 
 	void SetupDescriptorSets()
 	{
-		for (uint32 Index = 0; Index < Meshes.Count(); ++Index)
+		for (auto Mesh : Meshes)
 		{
-			Meshes[Index]->SetupDescriptorSet(Device, CommandBuffer.DescriptorPool, DescriptorSetLayout);
+			Mesh.second->SetupDescriptorSet(this);
 		}
 	}
 
 	void UpdateUniformBuffers()
 	{
-		for (uint32 BufferIndex = 0; BufferIndex < Meshes.Count(); ++BufferIndex)
+		for (auto Mesh : Meshes)
 		{
-			Meshes[BufferIndex]->UpdateUniformBuffer(Device, KantiCameraManager::GetMainCamera(), KantiTimeManager::GetMSPerFrame());
+			Mesh.second->UpdateUniformBuffer(Device);
 		}
 	}
 
@@ -1016,9 +1170,9 @@ class VulkanRenderer
 
 			vkCmdBindPipeline(CommandBuffer.DrawCommandBuffers[BufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, Pipelines.Solid);
 
-			for (uint32 Index = 0; Index < Meshes.Count(); ++Index)
+			for (auto Mesh : Meshes)
 			{
-				Meshes[Index]->Draw(CommandBuffer.DrawCommandBuffers[BufferIndex], RenderProperties.PipelineLayout);
+				Mesh.second->Draw(CommandBuffer.DrawCommandBuffers[BufferIndex], RenderProperties.PipelineLayout);
 			}
 
 			vkCmdEndRenderPass(CommandBuffer.DrawCommandBuffers[BufferIndex]);
@@ -1026,6 +1180,8 @@ class VulkanRenderer
 			VK_CHECK_RESULT(vkEndCommandBuffer(CommandBuffer.DrawCommandBuffers[BufferIndex]));
 		}
 	}
+
+	void CreateMeshBuffer(class KMeshRenderer* MeshRenderer);
 
 	static void *operator new(memory_index Size)
 	{
@@ -1037,3 +1193,6 @@ class VulkanRenderer
 		MemDealloc(Block);
 	}
 };
+
+#define VULKAN_RENDERER
+#endif

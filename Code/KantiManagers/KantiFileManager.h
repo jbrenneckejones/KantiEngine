@@ -1,8 +1,5 @@
 #ifndef KANTI_FILE_MANAGER
 
-#include "KantiEngine.h"
-#include "KantiConversionManager.h"
-
 class KantiFileManager
 {
 	public:
@@ -10,19 +7,24 @@ class KantiFileManager
 	k_internal platform_get_file_contents* PlatformGetFile;
 	k_internal platform_set_file_contents* PlatformSetFile;
 
-	k_internal inline k_string GetFileContents(k_string FileName)
+	k_internal inline KString GetFileContents(KString FileName)
 	{
 		return KantiFileManager::PlatformGetFile(FileName);
 	}
 
-	k_internal inline void SetFileContents(k_string FileName, k_string Contents)
+	k_internal inline void SetFileContents(KString FileName, KString Contents)
 	{
 		KantiFileManager::PlatformSetFile(FileName, Contents);
 	}
 
-	k_internal inline void LoadOBJFile(k_string FileName, render_data& ObjectData)
+	k_internal inline void LoadOBJFile(KString FileName, KMeshData& ObjectData)
 	{
-		k_string FileContents = GetFileContents(FileName);
+		KString FileContents = GetFileContents(FileName);
+
+		if (!FileContents.Data())
+		{
+			return;
+		}
 
 		char CurrentFoundChar = ' ';
 		for (char* Character = FileContents.Data(); *Character; ++Character)
@@ -38,7 +40,7 @@ class KantiFileManager
 				}
 				++Character;
 
-				vertex Vertex = {};
+				KVertex Vertex = {};
 
 				for (uint32 Index = 0; Index < 3; ++Index)
 				{
@@ -62,6 +64,7 @@ class KantiFileManager
 					Vertex.Position.E[Index] = ToFloat((char *)Value.data());
 				}
 
+				Vertex.Color = { 1.0f, 1.0f, 1.0f };
 				ObjectData.Vertices.PushBack(Vertex);
 
 				break;
@@ -109,20 +112,18 @@ class KantiFileManager
 				break;
 			}
 		}
-
-
 	}
 };
 
 platform_get_file_contents* KantiFileManager::PlatformGetFile = nullptr;
 platform_set_file_contents* KantiFileManager::PlatformSetFile = nullptr;
 
-inline k_internal k_string GetFileContents(k_string FileName)
+inline k_internal KString GetFileContents(KString FileName)
 {
 	return KantiFileManager::GetFileContents(FileName);
 }
 
-inline k_internal void SetFileContents(k_string FileName, k_string Contents)
+inline k_internal void SetFileContents(KString FileName, KString Contents)
 {
 	KantiFileManager::SetFileContents(FileName, Contents);
 }

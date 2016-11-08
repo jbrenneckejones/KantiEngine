@@ -1,7 +1,5 @@
 #ifndef VULKAN_SWAPCHAIN
 
-#include "KantiVulkan.h"
-
 class VulkanSwapChain
 {
 	typedef struct swap_chain_buffers {

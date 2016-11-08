@@ -1,18 +1,15 @@
 #ifndef KANTI_ALLOCATOR
 
-#include "KantiPlatform.h"
-#include "KantiEngine.h"
-
 namespace AllocatorMath
 {
 	template <class T> T* AllocateNew(class KantiMemoryManager& Allocator)
 	{
-		return new (KantiMemoryManager.Allocate(sizeof(T), __alignof(T))) T;
+		return new (KantiMemoryManager.Allocate(sizeof(T), alignof(T))) T;
 	}
 
 	template <class T> T* AllocateNew(class KantiAllocator& Allocator, const T& Type)
 	{
-		return new (KantiMemoryManager.Allocate(sizeof(T), __alignof(T))) T(Type);
+		return new (KantiMemoryManager.Allocate(sizeof(T), alignof(T))) T(Type);
 	}
 
 	template<class T> void DeallocateDelete(class KantiMemoryManager& Allocator, T& Object)
@@ -31,7 +28,7 @@ namespace AllocatorMath
 			HeaderSize += 1;
 
 		//Allocate extra space to store array length in the bytes before the array
-		T* Pointer = ((T*)KantiAllocator.Allocate(sizeof(T)*(Length + HeaderSize), __alignof(T))) + HeaderSize;
+		T* Pointer = ((T*)KantiAllocator.Allocate(sizeof(T)*(Length + HeaderSize), alignof(T))) + HeaderSize;
 
 		*(((memory_index*)Pointer) - 1) = Length;
 
@@ -144,18 +141,8 @@ class KantiMemoryManager
 {
 	public:
 	KantiMemoryManager(memory_index AloccateMemorySize, void* StartAddress)
-		: MemoryBlocks((MemoryBlock*)StartAddress)
 	{
-		Members.StartAddress = StartAddress;
-		Members.AllocatedMemorySize = AloccateMemorySize;
-
-		Members.UsedMemory = 0;
-		Members.NumberOfAllocations = 0;
-
-		Assert(Members.AllocatedMemorySize > sizeof(MemoryBlock));
-
-		MemoryBlocks->MemorySize = AloccateMemorySize;
-		MemoryBlocks->NextMemoryBlock = nullptr;
+		Initialize(AloccateMemorySize, StartAddress);
 	}
 
 	~KantiMemoryManager()
@@ -168,20 +155,22 @@ class KantiMemoryManager
 		MemoryBlocks = nullptr;
 	}
 
+	inline void Initialize(memory_index AloccateMemorySize, void* StartAddress)
+	{
+		MemoryBlocks = (MemoryBlock*)StartAddress;
+		Members.StartAddress = StartAddress;
+		Members.AllocatedMemorySize = AloccateMemorySize;
+
+		Members.UsedMemory = 0;
+		Members.NumberOfAllocations = 0;
+
+		Assert(Members.AllocatedMemorySize > sizeof(MemoryBlock));
+
+		MemoryBlocks->MemorySize = AloccateMemorySize;
+		MemoryBlocks->NextMemoryBlock = nullptr;
+	}
+
 	// Platform
-
-	k_internal KantiMemoryManager& GetInstance()
-	{
-		return *Instance;
-	}
-
-	k_internal void SetInstance(KantiMemoryManager* Manager)
-	{
-		// NOTE(Julian): Should only set this once
-		Assert(Instance == nullptr)
-
-		Instance = Manager;
-	}
 
 	k_internal platform_allocate_memory* PlatformMemoryAllocate;
 	k_internal platform_deallocate_memory* PlatformMemoryDeallocate;
@@ -369,8 +358,6 @@ class KantiMemoryManager
 
 	private:
 
-	local_persist KantiMemoryManager* Instance;
-
 	struct AllocationHeader
 	{
 		memory_index MemorySize;
@@ -413,37 +400,8 @@ class KantiMemoryManager
 	AllocatorMembers Members;
 };
 
-KantiMemoryManager* KantiMemoryManager::Instance = nullptr;
-
-inline k_internal void
-MemCopy(void* Destination, void* Source, memory_index Size)
-{
-	KantiMemoryManager::GetInstance().MemoryCopy(Destination, Source, Size);
-}
-
-inline k_internal void
-MemMove(void** Destination, void** Source, memory_index Size, uint8 Alignment = 4)
-{
-	KantiMemoryManager::GetInstance().MemoryMove(Destination, Source, Size, Alignment);
-}
-
-inline k_internal void*
-MemAlloc(memory_index MemorySize, uint8 Alignment = 4)
-{
-	return KantiMemoryManager::GetInstance().Allocate(MemorySize, Alignment);
-}
-
-inline k_internal void*
-MemRealloc(void* Pointer, memory_index SourceSize, memory_index NewSize, uint8 Alignment = 4)
-{
-	return KantiMemoryManager::GetInstance().ReAllocate(Pointer, SourceSize, NewSize, Alignment);
-}
-
-inline k_internal void
-MemDealloc(void* Pointer)
-{
-	KantiMemoryManager::GetInstance().Deallocate(Pointer);
-}
+platform_allocate_memory* KantiMemoryManager::PlatformMemoryAllocate = nullptr;
+platform_deallocate_memory* KantiMemoryManager::PlatformMemoryDeallocate = nullptr;
 
 #define KANTI_ALLOCATOR
 #endif

@@ -1,12 +1,11 @@
 #include "VulkanCommandBuffer.h"
-#include "VulkanSwapChain.h"
 
 VkCommandBuffer* VulkanCommandBuffer::GetCurrentDrawBuffer()
 {
 	return &DrawCommandBuffers[CurrentBuffer];
 }
 
-void VulkanCommandBuffer::BuildCommandBuffers(commandbuffer_render_info& Info, KList<k_object> Objects)
+void VulkanCommandBuffer::BuildCommandBuffers(commandbuffer_render_info& Info, std::map<UniqueID, VulkanRenderObject*> Meshes)
 {
 	VkCommandBufferBeginInfo CommandBufferInfo = { };
 	CommandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -53,13 +52,10 @@ void VulkanCommandBuffer::BuildCommandBuffers(commandbuffer_render_info& Info, K
 		vkCmdSetScissor(DrawCommandBuffers[Index], 0, 1, &Scissor);
 		vkCmdBindPipeline(DrawCommandBuffers[Index], VK_PIPELINE_BIND_POINT_GRAPHICS, Info.Pipeline);
 
-
-		/*
-		for(uint32 ObjectIndex = 0; ObjectIndex < Objects.size(); ++ObjectIndex)
+		for(auto Mesh : Meshes)
 		{
-		DrawObject(Objects[ObjectIndex], *GetCurrentDrawBuffer(), Info.PipelineLayout, Info.DescriptorSet);
+			Mesh.second->Draw(*GetCurrentDrawBuffer(), Info.PipelineLayout); //, Info.DescriptorSet);
 		}
-		*/
 
 		vkCmdEndRenderPass(DrawCommandBuffers[Index]);
 

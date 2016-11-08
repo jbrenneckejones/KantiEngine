@@ -1,7 +1,5 @@
 #ifndef VULKAN_HELPER
 
-#include "KantiVulkan.h"
-
 /** Helper function for memory info **/
 inline VkMemoryAllocateInfo CreateMemoryAllocInfo()
 {
@@ -27,6 +25,62 @@ inline VkDescriptorSetAllocateInfo CreateDescriptorSetAllocateInfo(VkDescriptorP
 	return Result;
 }
 
+inline VkImageCreateInfo CreateImageCreateInfo()
+{
+	VkImageCreateInfo Result = {};
+	Result.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	Result.pNext = NULL;
+
+	return (Result);
+}
+
+inline VkMemoryAllocateInfo CreateMemoryAllocateInfo()
+{
+	VkMemoryAllocateInfo Result = {};
+	Result.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	Result.pNext = NULL;
+	Result.allocationSize = 0;
+	Result.memoryTypeIndex = 0;
+
+	return (Result);
+}
+
+inline VkImageViewCreateInfo CreateImageViewCreateInfo()
+{
+	VkImageViewCreateInfo Result = {};
+	Result.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	Result.pNext = NULL;
+
+	return (Result);
+}
+
+inline VkSamplerCreateInfo CreateSamplerCreateInfo()
+{
+	VkSamplerCreateInfo Result = {};
+	Result.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	Result.pNext = NULL;
+
+	return (Result);
+}
+
+inline VkFramebufferCreateInfo CreateFramebufferCreateInfo()
+{
+	VkFramebufferCreateInfo Result = {};
+	Result.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	Result.pNext = NULL;
+
+	return (Result);
+}
+
+inline VkDescriptorImageInfo CreateDescriptorImageInfo(VkSampler Sampler, VkImageView ImageView, VkImageLayout ImageLayout)
+{
+	VkDescriptorImageInfo Result = {};
+	Result.sampler = Sampler;
+	Result.imageView = ImageView;
+	Result.imageLayout = ImageLayout;
+	return (Result);
+}
+
 inline VkWriteDescriptorSet CreateWriteDescriptorSet(VkDescriptorSet DescriptorSet, 
 	VkDescriptorType DescriptorType, uint32 Binding, VkDescriptorBufferInfo* BufferInfo)
 {
@@ -41,6 +95,22 @@ inline VkWriteDescriptorSet CreateWriteDescriptorSet(VkDescriptorSet DescriptorS
 	Result.descriptorCount = 1;
 
 	return Result;
+}
+
+inline VkWriteDescriptorSet CreateWriteDescriptorSet(VkDescriptorSet DescriptorSet,
+	VkDescriptorType DescriptorType, uint32 Binding, VkDescriptorImageInfo* ImageInfo)
+{
+	VkWriteDescriptorSet Result = {};
+	Result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	Result.pNext = NULL;
+	Result.dstSet = DescriptorSet;
+	Result.descriptorType = DescriptorType;
+	Result.dstBinding = Binding;
+	Result.pImageInfo = ImageInfo;
+	// Default value in all examples
+	Result.descriptorCount = 1;
+
+	return (Result);
 }
 
 inline VkDescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding(
@@ -233,6 +303,15 @@ inline VkRenderPassBeginInfo CreateRenderPassBeginInfo()
 	return Result;
 }
 
+inline VkRenderPassCreateInfo CreateRenderPassCreateInfo()
+{
+	VkRenderPassCreateInfo Result = {};
+	Result.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	Result.pNext = NULL;
+
+	return (Result);
+}
+
 inline VkViewport CreateViewport(
 	real32 Width, real32 Height, real32 MinDepth, real32 MaxDepth)
 {
@@ -345,7 +424,7 @@ inline VkVertexInputAttributeDescription CreateVertexInputAttributeDescription(
 	return Result;
 }
 
-inline VkPipelineVertexInputStateCreateInfo CreatePipelineVertexInputStateInfo()
+inline VkPipelineVertexInputStateCreateInfo CreatePipelineVertexInputStateCreateInfo()
 {
 	VkPipelineVertexInputStateCreateInfo Result = {};
 	Result.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

@@ -1,7 +1,5 @@
 #ifndef VULKAN_ENCAPSULATED_DEVICE
 
-#include "KantiVulkan.h"
-
 struct device_creation_info
 {
 	VkBufferUsageFlags UsageFlags;
@@ -66,7 +64,7 @@ class VulkanEncapsulatedDevice
 
 	void InitializeDevice(VkPhysicalDevice NewDevice);
 
-	VkBool32 CheckDeviceExtensionPresent(VkPhysicalDevice PhysicalDeviceToCheck, k_string ExtensionName);
+	VkBool32 CheckDeviceExtensionPresent(VkPhysicalDevice PhysicalDeviceToCheck, KString ExtensionName);
 
 	/**
 	* Get the index of a memory type that has all the requested property bits set

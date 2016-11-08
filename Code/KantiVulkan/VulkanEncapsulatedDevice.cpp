@@ -1,6 +1,4 @@
 #include "VulkanEncapsulatedDevice.h"
-#include "VulkanBuffer.h"
-#include "VulkanHelper.h"
 
 VulkanEncapsulatedDevice::VulkanEncapsulatedDevice()
 {
@@ -37,7 +35,7 @@ void VulkanEncapsulatedDevice::InitializeDevice(VkPhysicalDevice NewDevice)
 	vkGetPhysicalDeviceMemoryProperties(NewDevice, &DeviceMemoryProperties);
 }
 
-VkBool32 VulkanEncapsulatedDevice::CheckDeviceExtensionPresent(VkPhysicalDevice PhysicalDeviceToCheck, k_string ExtensionName)
+VkBool32 VulkanEncapsulatedDevice::CheckDeviceExtensionPresent(VkPhysicalDevice PhysicalDeviceToCheck, KString ExtensionName)
 {
 	uint32 ExtensionCount = 0;
 	KList<VkExtensionProperties> Extensions;
@@ -47,7 +45,7 @@ VkBool32 VulkanEncapsulatedDevice::CheckDeviceExtensionPresent(VkPhysicalDevice 
 	vkEnumerateDeviceExtensionProperties(PhysicalDeviceToCheck, NULL, &ExtensionCount, Extensions.Data());
 	for (uint32 Index = 0; Index < ExtensionCount; ++Index)
 	{
-		k_string ExtName = Extensions[Index].extensionName;
+		KString ExtName = Extensions[Index].extensionName;
 
 		if (ExtensionName == ExtName)
 		{
@@ -373,7 +371,7 @@ void VulkanEncapsulatedDevice::SetupDevice(VkInstance Instance, VkQueue& Queue)
 	Error = vkEnumeratePhysicalDevices(Instance, &GPUCount, PhysicalDevices.Data());
 	if (Error)
 	{
-		k_string ErrorMessage = "Could not enumerate phyiscal devices : \n";
+		KString ErrorMessage = "Could not enumerate phyiscal devices : \n";
 		ErrorMessage.PushBack((const char)Error);
 		ErrorMessage.PushBack("Fatal Error \n");
 

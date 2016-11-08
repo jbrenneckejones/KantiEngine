@@ -1,8 +1,5 @@
 #ifndef KANTI_INPUT_MANAGER
 
-#include "KantiPlatform.h"
-#include "KantiMath.h"
-
 enum Action
 {
 	ACTION_ONE,
@@ -483,12 +480,16 @@ class KantiInputManager
 {
 	public:
 
-	k_internal KantiInputManager* InputManager;
-	k_internal InputMapper Mapper;
-	k_internal int32 LastMouseX;
-	k_internal int32 LastMouseY;
+	InputMapper Mapper;
+	int32 LastMouseX;
+	int32 LastMouseY;
 
-	k_internal void Input(MappedInput& inputs)
+	KantiInputManager()
+	{
+		Mapper = InputMapper();
+	}
+
+	void Input(MappedInput& inputs)
 	{
 		/*
 		AxisX = inputs.Ranges[InputMapping::RANGE_ONE];
@@ -524,7 +525,7 @@ class KantiInputManager
 	//
 	// Helper for converting VK codes into raw input button codes
 	//
-	bool k_internal ConvertVKCodeToRawButton(uint32 VKCode, input_button_data& Button)
+	bool32 ConvertVKCodeToRawButton(uint32 VKCode, input_button_data& Button)
 	{
 		// W = 0x57
 		// A = 0x41
@@ -549,7 +550,7 @@ class KantiInputManager
 		return true;
 	}
 
-	bool k_internal ConvertLParamToButtonInfo(int64 LParam, input_button_data& Button)
+	bool32 ConvertLParamToButtonInfo(int64 LParam, input_button_data& Button)
 	{
 		bool32 IsDown = ((LParam & (1 << 31)) == 0);
 		bool32 WasDown = ((LParam & (1 << 30)) != 0);
@@ -560,7 +561,7 @@ class KantiInputManager
 		return true;
 	}
 
-	bool k_internal ConvertWindowsButton(uint32 VKCode, int64 LParam, input_button_data& Button)
+	bool32 ConvertWindowsButton(uint32 VKCode, int64 LParam, input_button_data& Button)
 	{
 		ConvertVKCodeToRawButton(VKCode, Button);
 		ConvertLParamToButtonInfo(LParam, Button);
@@ -568,11 +569,6 @@ class KantiInputManager
 		return true;
 	}
 };
-
-KantiInputManager* KantiInputManager::InputManager = nullptr;
-InputMapper KantiInputManager::Mapper = InputMapper();
-int32 KantiInputManager::LastMouseX = 0;
-int32 KantiInputManager::LastMouseY = 0;
 
 #define KANTI_INPUT_MANAGER
 #endif

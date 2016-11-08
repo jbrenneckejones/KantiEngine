@@ -1,7 +1,5 @@
 #ifndef VULKAN_COMMAND_BUFFER
 
-#include "KantiVulkan.h"
-
 struct commandbuffer_render_info
 {
 	VkClearColorValue Color;
@@ -69,7 +67,7 @@ class VulkanCommandBuffer
 	// Pure virtual function to be overriden by the dervice class
 	// Called in case of an event where e.g. the framebuffer has to be rebuild and thus
 	// all command buffers that may reference this
-	void BuildCommandBuffers(commandbuffer_render_info& Info, KList<k_object> Objects);
+	void BuildCommandBuffers(commandbuffer_render_info& Info, std::map<UniqueID, class VulkanRenderObject*>  Meshes);
 
 	// Builds the command buffers used to submit the present barriers
 	void BuildPresentCommandBuffers(class VulkanSwapChain* SwapChain);

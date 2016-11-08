@@ -1,8 +1,5 @@
 #ifndef KANTI_RANDOM_MANAGER
 
-#include "KantiPlatform.h"
-#include "KantiMath.h"
-
 class KantiRandomManager
 {
 	private:

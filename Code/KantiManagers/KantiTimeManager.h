@@ -1,8 +1,5 @@
 #ifndef KANTI_TIME_MANAGER
 
-#include "KantiPlatform.h"
-#include "KantiEngine.h"
-
 class KantiTimeManager
 {
 	private:

@@ -1,8 +1,5 @@
 #ifndef VULKAN_BUFFER
 
-
-#include "KantiVulkan.h"
-
 struct buffer_creation_info
 {
 	VkBufferUsageFlags UsageFlags;

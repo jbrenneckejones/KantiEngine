@@ -1,11 +1,5 @@
 #ifndef KANTI_CAMERA_MANAGER
 
-#include "KantiPlatform.h"
-#include "KantiMath.h"
-#include "KantiIntrinsics.h"
-
-#include "KantiInputManager.h"
-
 class KantiCameraManager
 {
 	private:
@@ -21,15 +15,15 @@ class KantiCameraManager
 			int x = 0;
 		}
 
-		Matrix4x4 RotationMatrix = GetOrientation();
-		Matrix4x4 TranslateMatrix;
+		KMatrix4x4 RotationMatrix = GetOrientation();
+		KMatrix4x4 TranslateMatrix;
 
 		// RotationMatrix = GetOrientation();
 		// RotationMatrix = Matrix4x4::Rotate(RotationMatrix, ToRadians(Rotation.ToEuler().X), Vector3(1.0f, 0.0f, 0.0f));
 		// RotationMatrix = Matrix4x4::Rotate(RotationMatrix, ToRadians(Rotation.ToEuler().Y), Vector3(0.0f, 1.0f, 0.0f));
 		// RotationMatrix = Matrix4x4::Rotate(RotationMatrix, ToRadians(Rotation.ToEuler().Z), Vector3(0.0f, 0.0f, 1.0f));
 
-		TranslateMatrix = Matrix4x4::Translate(Matrix4x4(), Position);
+		TranslateMatrix = KMatrix4x4::Translate(KMatrix4x4(), Position);
 
 		if (Type == CameraType::FPS)
 		{
@@ -45,10 +39,10 @@ class KantiCameraManager
 	enum CameraType { LOOKAT, FPS };
 	CameraType Type = CameraType::LOOKAT;
 
-	Quaternion Rotation = Quaternion();
-	Vector3 Position = Vector3();
+	KQuaternion Rotation = KQuaternion();
+	KVector3 Position = KVector3();
 
-	Vector3 View = Vector3(0.0f, 0.0f, 0.0f);
+	KVector3 View = KVector3(0.0f, 0.0f, 0.0f);
 
 	real32 RotationSpeed = 1.0f;
 	real32 MovementSpeed = 0.1f;
@@ -72,17 +66,17 @@ class KantiCameraManager
 		UpdateViewMatrix();
 	}
 
-	inline Quaternion GetOffsetRotation()
+	inline KQuaternion GetOffsetRotation()
 	{
-		Quaternion Result = Quaternion::FromAxisAngle(Vector3(1, 0, 0), -UpAngle);
-		Result *= Quaternion::FromAxisAngle(Vector3(0, 1, 0), RightAngle);
+		KQuaternion Result = KQuaternion::FromAxisAngle(KVector3(1, 0, 0), -UpAngle);
+		Result *= KQuaternion::FromAxisAngle(KVector3(0, 1, 0), RightAngle);
 
 		return (Result);
 	}
 
-	inline Matrix4x4 GetOrientation()
+	inline KMatrix4x4 GetOrientation()
 	{
-		Matrix4x4 Result = GetOffsetRotation().ToMatrix();
+		KMatrix4x4 Result = GetOffsetRotation().ToMatrix();
 
 		return (Result);
 	}
@@ -99,14 +93,13 @@ class KantiCameraManager
 
 	struct
 	{
-		Matrix4x4 Perspective;
-		Matrix4x4 View;
+		KMatrix4x4 Perspective;
+		KMatrix4x4 View;
 	} Matrices;
 
 	KantiCameraManager()
 	{
-		KantiInputManager::InputManager->Mapper.PushContext("maincontext");
-		KantiInputManager::InputManager->Mapper.AddCallback(Input, 0);
+		
 	}
 
 	k_internal inline KantiCameraManager* GetMainCamera()
@@ -141,33 +134,33 @@ class KantiCameraManager
 		this->FOV = NewFOV;
 		this->ZNear = Near;
 		this->ZFar = Far;
-		Matrices.Perspective = Matrix4x4::Perspective(ToRadians(NewFOV), AspectRatio, ZNear, ZFar);
+		Matrices.Perspective = KMatrix4x4::Perspective(ToRadians(NewFOV), AspectRatio, ZNear, ZFar);
 	};
 
 	inline void UpdateAspectRatio(real32 AspectRatio)
 	{
-		Matrices.Perspective = Matrix4x4::Perspective(ToRadians(FOV), AspectRatio, ZNear, ZFar);
+		Matrices.Perspective = KMatrix4x4::Perspective(ToRadians(FOV), AspectRatio, ZNear, ZFar);
 	}
 
-	inline void SetRotation(Quaternion NewRotation)
+	inline void SetRotation(KQuaternion NewRotation)
 	{
 		this->Rotation = NewRotation;
 		UpdateViewMatrix();
 	};
 
-	inline void Rotate(real32 Angle, Vector3 DeltaRotation)
+	inline void Rotate(real32 Angle, KVector3 DeltaRotation)
 	{
 		this->Rotation.RotateTo(Angle, DeltaRotation);
 		UpdateViewMatrix();
 	}
 
-	inline void SetTranslation(Vector3 Translation)
+	inline void SetTranslation(KVector3 Translation)
 	{
 		this->Position = Translation;
 		UpdateViewMatrix();
 	};
 
-	inline void Translate(Vector3 DeltaTranslation)
+	inline void Translate(KVector3 DeltaTranslation)
 	{
 		this->Position += DeltaTranslation;
 		UpdateViewMatrix();
@@ -179,8 +172,8 @@ class KantiCameraManager
 		{
 			if (IsMoving())
 			{
-				Vector3 CameraFront = GetOffsetRotation() * Vector3::Forward();
-				Vector3 CameraLeft = GetOffsetRotation() * Vector3::Left();
+				KVector3 CameraFront = GetOffsetRotation() * KVector3::Forward;
+				KVector3 CameraLeft = GetOffsetRotation() * KVector3::Left;
 				// CameraFront.X = -Cos(ToRadians(Rotation.X)) * Sin(ToRadians(Rotation.Y));
 				// CameraFront.Y = Sin(ToRadians(Rotation.X));
 				// CameraFront.Z = Cos(ToRadians(Rotation.X)) * Cos(ToRadians(Rotation.Y));

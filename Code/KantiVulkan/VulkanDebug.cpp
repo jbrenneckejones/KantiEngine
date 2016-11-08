@@ -1,5 +1,4 @@
 #include "VulkanDebug.h"
-#include "../KantiManagers/KantiDebugManager.h"
 
 void VulkanDebugLayer::SetupDebugging(VkInstance VulkanInstance, VkDebugReportFlagsEXT Flags, VkDebugReportCallbackEXT CallBack)
 {

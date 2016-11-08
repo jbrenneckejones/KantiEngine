@@ -1,6 +1,4 @@
 #include "VulkanBuffer.h"
-#include "VulkanEncapsulatedDevice.h"
-#include "VulkanHelper.h"
 
 VkMappedMemoryRange VulkanBuffer::GetMappedMemoryRange(VkDeviceMemory Memory, VkDeviceSize Offset, VkDeviceSize Size)
 {
