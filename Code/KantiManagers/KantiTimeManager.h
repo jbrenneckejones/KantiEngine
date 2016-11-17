@@ -47,8 +47,8 @@ class KantiTimeManager
 
 		CyclesElapsed = EndCycleCount - LastCycleCount;
 		CounterElapsed = EndPerformanceCount - LastPerformanceCount;
-		MSPerFrame = (real32)(1000.0f * (real32)GetCounterElapsed() / (real32)PerfomanceCountFrequency );
-		FPS = (real32)(PerfomanceCountFrequency / (real32)GetCounterElapsed());
+		MSPerFrame = (real32)(1000.0f * (real32)CounterElapsed / (real32)PerfomanceCountFrequency );
+		FPS = (real32)(PerfomanceCountFrequency / (real32)CounterElapsed);
 		MCPF = ((real32)GetCyclesElapsed() / (1000.0f * 1000.0f));
 
 		LastPerformanceCount = EndPerformanceCount;
@@ -93,6 +93,13 @@ class KantiTimeManager
 	k_internal real32 GetMCPF()
 	{
 		return MCPF;
+	}
+
+	k_internal real32 GetTime()
+	{
+		real32 Result = Max(0.0f, (EndPerformanceCount - PerfomanceCountFrequency) / 1000000.0f);
+
+		return (Result);
 	}
 };
 

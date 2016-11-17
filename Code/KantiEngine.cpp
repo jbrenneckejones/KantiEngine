@@ -1,10 +1,10 @@
 #include "KantiEngine.h"
 
 
-k_internal void
+k_internal void*
 MemCopy(void* Destination, void* Source, memory_index Size)
 {
-	KEngine::EngineInstance->KMemory->MemoryCopy(Destination, Source, Size);
+	return KEngine::EngineInstance->KMemory->MemoryCopy(Destination, Source, Size);
 }
 
 k_internal void
@@ -20,58 +20,49 @@ MemAlloc(memory_index MemorySize, uint8 Alignment)
 }
 
 k_internal void*
-MemRealloc(void* Pointer, memory_index SourceSize, memory_index NewSize, uint8 Alignment)
+MemRealloc(void* Source, memory_index SourceSize, memory_index NewSize, uint8 Alignment)
 {
-	return KEngine::EngineInstance->KMemory->ReAllocate(Pointer, SourceSize, NewSize, Alignment);
+	return KEngine::EngineInstance->KMemory->ReAllocate(Source, SourceSize, NewSize, Alignment);
 }
 
 k_internal void
-MemDealloc(void* Pointer)
+MemDealloc(void* Source)
 {
-	KEngine::EngineInstance->KMemory->Deallocate(Pointer);
+	KEngine::EngineInstance->KMemory->Deallocate(Source);
+}
+
+k_internal void
+MemSet(void* Source, int32 FillByte, memory_index BytesToFill)
+{
+	KEngine::EngineInstance->KMemory->MemorySet(Source, FillByte, BytesToFill);
 }
 
 // Vulkan
 #ifdef VULKAN
-#include "KantiVulkan/KantiVulkan.cpp"
 
-#include "KantiVulkan/VulkanBuffer.cpp"
-#include "KantiVulkan/VulkanCommandBuffer.cpp"
-#include "KantiVulkan/VulkanDebug.cpp"
-#include "KantiVulkan/VulkanEncapsulatedDevice.cpp"
-#include "KantiVulkan/VulkanSwapChain.cpp"
+#include "vulkan/vulkan.h"
+#include "KantiVulkan/KantiVulkan.h"
 
 extern "C" PLATFORM_GAME_RENDER_INITIALIZE(VulkanInitialize)
 {
-	vulkan_base_properties Properties = {};
-	Properties.ApplicationName = "Kanti Engine";
-	Properties.DestinationHeight = 1280;
-	Properties.DestinationWidth = 720;
-	Properties.EnableDebugMarkers = true;
-	// Properties.EnabledFeatures = ;
-	Properties.EnableValidation = true;
-	Properties.EnableVSync = false;
-
-	VulkanRendererInstance = new VulkanRenderer(Platform, Properties);
-	VulkanRendererInstance->Prepare();
-
+	Vulkan = new VulkanRenderer(Platform);
 	return;
 }
 
 extern "C" PLATFORM_GAME_UPDATE_AND_RENDER(VulkanUpdateAndRender)
 {
-	VulkanRendererInstance->Render();
+	Vulkan->Render();
+
 	return;
 }
 
 extern "C" PLATFORM_CREATE_MESH_BUFFER(VulkanCreateMeshBuffer)
 {
-	VulkanRendererInstance->CreateMeshBuffer(MeshRenderer);
+	// Vulkan->CreateMeshBuffer(MeshRenderer);
 	return;
 }
 
 #include "KantiManagers/KantiRenderManager.cpp"
-#include "KantiVulkan/VulkanRenderer.cpp"
 
 #endif
 
@@ -113,9 +104,6 @@ void KEngine::EngineLoop()
 	KRenderer.Render();
 
 	// Play sound
-
-	KString Stuff = "lllslsls";
-	Stuff += "skkkdkk";
 
 	char CharBuffer[100];
 	sprintf_s(CharBuffer, "MSPerFrame: %fms/f - FPS: %ff/s - MCPF: %fmc/f\n",

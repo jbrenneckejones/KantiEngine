@@ -39,6 +39,13 @@ SquareRoot(real32 Real32)
 }
 
 inline real32
+InverseSquareRoot(real32 Real32)
+{
+	real32 Result = 1.0f / sqrtf(Real32);
+	return(Result);
+}
+
+inline real32
 AbsoluteValue(real32 Real32)
 {
 	real32 Result = (real32)fabs(Real32);
@@ -329,7 +336,23 @@ Max(real32 X, real32 Y)
 	return (Result);
 }
 
-uint32
+inline uint32
+Max(uint32 X, uint32 Y)
+{
+	uint32 Result = (X > Y) ? X : Y;
+
+	return (Result);
+}
+
+inline real32
+Min(real32 X, real32 Y)
+{
+	real32 Result = (X < Y) ? X : Y;
+
+	return (Result);
+}
+
+inline uint32
 Min(uint32 X, uint32 Y)
 {
 	uint32 Result = (X < Y) ? X : Y;
@@ -360,46 +383,36 @@ public:
 		// Initialize(0);
 	}
 
-	inline KList(std::initializer_list<T> InitList)
+	inline KList(std::initializer_list<void> InitList)
 	{
 		Initialize(0);
 
-		for (const T* Index = InitList.begin(); Index != InitList.end(); ++Index)
+		for (const void* Index = InitList.begin(); Index != InitList.end(); ++Index)
 		{
 			PushBack(*Index);
 		}
 	}
 
-	inline KList(T* InitArray)
-	{
-		SetArray(InitArray, GetTypeCount(InitArray));
-	}
-
-	inline KList(const T* InitArray)
-	{
-		SetArray(InitArray, GetTypeCount(InitArray));
-	}
-
-	inline KList(T* InitArray, uint32 InitCount)
+	inline KList(void* InitArray, uint32 InitCount = -1)
 	{
 		SetArray(InitArray, InitCount);
 	}
 
-	inline KList(const T* InitArray, uint32 InitCount)
+	inline KList(const void* InitArray, uint32 InitCount = -1)
 	{
 		SetArray(InitArray, InitCount);
 	}
 
 	template<uint32 Count>
-	inline KList(T(&InitArray)[Count])
+	inline KList(void(&InitArray)[Count])
 	{
-		SetArray(*InitArray, Count);
+		SetArray(&InitArray, Count);
 	}
 
 	template<uint32 Count>
-	inline KList(const T(&InitArray)[Count])
+	inline KList(const void(&InitArray)[Count])
 	{
-		SetArray(*InitArray, Count);
+		SetArray(&InitArray, Count);
 	}
 
 	inline KList(uint32 Size)
@@ -432,12 +445,12 @@ public:
 
 		ElementMax = Size;
 		MemorySize = sizeof(T) * ElementMax;
-		Array = (T *)MemRealloc(Array, MemorySize, MemorySize, 8);
-
 		ElementCount = Size;
+
+		Array = (T *)MemRealloc(Array, MemorySize, MemorySize, 8);
 	}
 
-	inline void Set(uint32 Index, T Element)
+	inline void Set(uint32 Index, void Element)
 	{
 		if (!Array)
 		{
@@ -447,7 +460,7 @@ public:
 		Array[Index] = Element;
 	}
 
-	inline void PushBack(T Element)
+	inline void PushBack(void Element)
 	{
 		if (ElementCount >= ElementMax)
 		{
@@ -458,7 +471,7 @@ public:
 	}
 
 	template<uint32 Count>
-	inline void PushBack(T(&ElementList)[Count])
+	inline void PushBack(void(&ElementList)[Count])
 	{
 		uint32 ElementListCount = Count;
 
@@ -479,7 +492,7 @@ public:
 	}
 
 	template<uint32 Count>
-	inline void PushBack(const T(&ElementList)[Count])
+	inline void PushBack(const void(&ElementList)[Count])
 	{
 		uint32 ElementListCount = Count;
 
@@ -499,11 +512,11 @@ public:
 		}
 	}
 
-	inline void PushBack(T* ElementList, uint32 Size)
+	inline void PushBack(void* ElementList, uint32 Size)
 	{
 		Grow(Size);
 
-		for (T* Element = ElementList; *Element; ++Element)
+		for (void* Element = ElementList; *Element; ++Element)
 		{
 			PushBack(*Element);
 		}
@@ -511,7 +524,7 @@ public:
 		ElementCount = ElementCount + Size;
 	}
 
-	inline T& At(uint32 Index)
+	inline void& At(uint32 Index)
 	{
 		Assert(Index < ElementMax);
 
@@ -519,6 +532,11 @@ public:
 	}
 
 	inline uint32 Count()
+	{
+		return ElementCount;
+	}
+
+	inline uint32 Count() const
 	{
 		return ElementCount;
 	}
@@ -533,9 +551,9 @@ public:
 		return MemorySize;
 	}
 
-	inline KList<T> operator + (KList<T> Other)
+	inline KList<void*> operator + (KList<void*> Other)
 	{
-		KList<T> Result;
+		KList<void*> Result;
 		Result.PushBack(Array, ElementCount);
 
 		Result.PushBack(Other.Array, Other.Count());
@@ -543,26 +561,26 @@ public:
 		return (Result);
 	}
 
-	inline void operator += (KList<T> Other)
+	inline void operator += (KList<void*> Other)
 	{
 		PushBack(Other.Array, Other.Count());
 	}
 
-	inline T& operator[](uint32 Index)
+	inline void& operator[](uint32 Index)
 	{
 		Assert(Index < ElementMax);
 
 		return Array[Index];
 	}
 
-	inline const T& operator[](uint32 Index) const
+	inline const void& operator[](uint32 Index) const
 	{
 		Assert(Index < ElementMax);
 
 		return Array[Index];
 	}
 
-	inline bool32 operator ==(KList<T> OtherList)
+	inline bool32 operator ==(KList<void*> OtherList)
 	{
 		if (Array == OtherList.Array)
 		{
@@ -572,12 +590,12 @@ public:
 		return false;
 	}
 
-	inline T* Data()
+	inline void* Data()
 	{
 		return Array;
 	}
 
-	inline T* begin()
+	inline void* begin()
 	{
 		if (Array)
 		{
@@ -587,7 +605,7 @@ public:
 		return nullptr;
 	}
 
-	inline T* end()
+	inline void* end()
 	{
 		if (ElementMax > 0)
 		{
@@ -599,10 +617,11 @@ public:
 
 protected:
 
-	inline uint32 GetTypeCount(T* InitArray)
+	inline uint32 GetTypeCount(void* InitArray)
 	{
 		uint32 Result = 0;
-		for (T* Iterator = InitArray; *Iterator; ++Iterator)
+
+		for (void* Iterator = InitArray; Iterator != nullptr || Iterator != NULL; ++Iterator)
 		{
 			Result++;
 		}
@@ -610,10 +629,11 @@ protected:
 		return Result;
 	}
 
-	inline uint32 GetTypeCount(const T* InitArray)
+	inline uint32 GetTypeCount(const void* InitArray)
 	{
 		uint32 Result = 0;
-		for (const T* Iterator = InitArray; *Iterator; ++Iterator)
+
+		for (const void* Iterator = InitArray; Iterator != nullptr || Iterator != NULL; ++Iterator)
 		{
 			Result++;
 		}
@@ -621,45 +641,60 @@ protected:
 		return Result;
 	}
 
-	inline virtual void Initialize(uint32 InitCount)
+	inline void Initialize(uint32 InitCount)
 	{
 		if (InitCount <= 0)
 		{
-			Array = (T *)MemAlloc(sizeof(T), 8);
+			Array = MemAlloc(ElementSize, 8);
 
-			MemorySize = sizeof(T);
+			MemorySize = ElementSize;
 
 			ElementMax = 1;
 		}
 		else
 		{
 			uint32 Slack = InitCount + GrowthAmount;
-			Array = (T *)MemAlloc(sizeof(T) * Slack, 8);
+			Array = MemAlloc(ElementSize * Slack, 8);
 
 			ElementCount = InitCount;
 
 			ElementMax = Slack;
 
-			MemorySize = sizeof(T) * ElementMax;
+			MemorySize = ElementSize * ElementMax;
 		}
 	}
 
-	inline virtual void SetArray(T* InitArray, uint32 InitCount)
+	inline void SetArray(void* InitArray, uint32 InitCount = -1)
 	{
+		if (InitCount == -1)
+		{
+			InitCount = GetTypeCount(InitArray);
+		}
+
 		Initialize(InitCount);
 
 		MemCopy(Array, InitArray, InitCount);
 	}
 
-	inline virtual void SetArray(const T* InitArray, uint32 InitCount)
+	inline void SetArray(const void* InitArray, uint32 InitCount = -1)
 	{
+		if (InitCount == -1)
+		{
+			InitCount = GetTypeCount(InitArray);
+		}
+
 		Initialize(InitCount);
 
 		MemCopy(Array, (void *)InitArray, InitCount);
 	}
 
-	inline virtual void SetArray(const T& InitArray, uint32 InitCount)
+	inline void SetArray(const void& InitArray, uint32 InitCount = -1)
 	{
+		if (InitCount == -1)
+		{
+			InitCount = ArrayCount(&InitArray);
+		}
+
 		Initialize(InitCount);
 
 		MemCopy(Array, (void *)&InitArray, InitCount);
@@ -691,7 +726,9 @@ protected:
 
 	uint32 ElementCount = 0;
 
-	T* Array = nullptr;
+	void* Array = nullptr;
+
+	uint32 ElementSize = 0;
 };
 
 
@@ -715,52 +752,55 @@ public:
 		CheckString();
 	}
 
+	inline KString(const char* InitArray, const char* const ArgList ...)
+	{
+		sprintf((char *)InitArray, ArgList);
+
+		SetArray((char *)InitArray);
+	}
+
 	inline KString(std::initializer_list<char> InitList) : KList<char>(InitList)
 	{
 		CheckString();
 	}
 
-	inline KString(char* InitArray) : KList<char>(InitArray)
+	inline KString(char* InitArray, uint32 InitCount = -1)
 	{
+		SetArray(InitArray, InitCount);
+
 		CheckString();
 	}
 
-	inline KString(const char* InitArray) : KList<char>(InitArray)
+	inline KString(const char* InitArray, uint32 InitCount = -1)
 	{
+		SetArray(InitArray, InitCount);
+
 		CheckString();
 	}
 
-	inline KString(const char* InitArray, uint32 InitCount) : KList<char>(InitArray, InitCount)
-	{
-		CheckString();
-	}
-
-	inline KString(char* InitArray, uint32 InitCount) : KList<char>(InitArray, InitCount)
-	{
-		CheckString();
-	}
-
-	inline KString(char* InitArray, uint32 FirstIndex, uint32 Length) : KList<char>(InitArray, Length)
+	inline KString(char* InitArray, uint32 FirstIndex, uint32 Length)
 	{
 		MemCopy(Data(), (void *)InitArray[FirstIndex], Length);
 		CheckString();
 	}
 
-	inline KString(const char* InitArray, uint32 FirstIndex, uint32 Length) : KList<char>(InitArray, Length)
+	inline KString(const char* InitArray, uint32 FirstIndex, uint32 Length)
 	{
 		MemCopy(Data(), (void *)InitArray[FirstIndex], Length);
 		CheckString();
 	}
 
 	template<uint32 Count>
-	inline KString(char(&InitArray)[Count]) : KList<char>(InitArray, Count)
+	inline KString(char(&InitArray)[Count])
 	{
+		SetArray(InitArray, Count);
 		CheckString();
 	}
 
 	template<uint32 Count>
-	inline KString(const char(&InitArray)[Count]) : KList<char>(InitArray, Count)
+	inline KString(const char(&InitArray)[Count])
 	{
+		SetArray(InitArray, Count);
 		CheckString();
 	}
 
@@ -770,6 +810,30 @@ public:
 	}
 
 protected:
+
+	inline uint32 GetTypeCount(char* InitArray) override
+	{
+		uint32 Result = 0;
+
+		for (char* Iterator = InitArray; *Iterator; ++Iterator)
+		{
+			Result++;
+		}
+
+		return Result;
+	}
+
+	inline uint32 GetTypeCount(const char* InitArray) override
+	{
+		uint32 Result = 0;
+
+		for (const char* Iterator = InitArray; *Iterator; ++Iterator)
+		{
+			Result++;
+		}
+
+		return Result;
+	}
 
 	inline void CheckString()
 	{
@@ -791,22 +855,37 @@ protected:
 		CheckString();
 	}
 
-	inline virtual void SetArray(char* InitArray, uint32 InitCount) override
+	inline virtual void SetArray(char* InitArray, uint32 InitCount = -1) override
 	{
+		if (InitCount == -1)
+		{
+			InitCount = GetTypeCount(InitArray);
+		}
+
 		KList<char>::SetArray(InitArray, InitCount);
 
 		CheckString();
 	}
 
-	inline virtual void SetArray(const char* InitArray, uint32 InitCount) override
+	inline virtual void SetArray(const char* InitArray, uint32 InitCount = -1) override
 	{
+		if (InitCount == -1)
+		{
+			InitCount = GetTypeCount(InitArray);
+		}
+
 		KList<char>::SetArray(InitArray, InitCount);
 
 		CheckString();
 	}
 
-	inline virtual void SetArray(const char& InitArray, uint32 InitCount) override
+	inline virtual void SetArray(const char& InitArray, uint32 InitCount = -1) override
 	{
+		if (InitCount == -1)
+		{
+			InitCount = ArrayCount(&InitArray);
+		}
+
 		KList<char>::SetArray(InitArray, InitCount);
 
 		CheckString();
@@ -949,6 +1028,11 @@ public:
 	{
 		this->X -= A.X;
 		this->Y -= A.Y;
+	}
+
+	inline real32& operator[](uint32 Index)
+	{
+		return E[Index];
 	}
 
 	inline bool32 operator==(KVector2 A)
@@ -1390,6 +1474,25 @@ class KVector3
 		return (Result);
 	}
 
+	inline real32& operator[](uint32 Index)
+	{
+		return E[Index];
+	}
+
+	inline bool32 operator==(KVector3 A)
+	{
+		bool32 Result = XY == A.XY && Z == A.Z;
+
+		return (Result);
+	}
+
+	inline bool32 operator==(const KVector3& A) const
+	{
+		bool32 Result = XY == A.XY && Z == A.Z;
+
+		return (Result);
+	}
+
 	inline KVector3 Hadamard(KVector3 A)
 	{
 		KVector3 Result = { this->X * A.X, this->Y * A.Y, this->Z * A.Z };
@@ -1483,7 +1586,7 @@ class KVector3
 
 	k_internal inline KVector3 Normalize(KVector3 A)
 	{
-		KVector3 Result = A / SqRoot(A);
+		KVector3 Result = A * InverseSquareRoot(KVector3::Dot(A, A));
 
 		return(Result);
 	}
@@ -1558,9 +1661,9 @@ class KVector3
 	{
 		KVector3 Result =
 		{
-			A.Y * B.Z - B.Y * A.Z,
-			A.Z * B.X - B.Z * A.X,
-			A.X * B.Y - B.X * A.Y
+			(A.Y * B.Z) - (B.Y * A.Z),
+			(A.Z * B.X) - (B.Z * A.X),
+			(A.X * B.Y) - (B.X * A.Y)
 		};
 
 		return (Result);
@@ -1575,7 +1678,8 @@ class KVector3
 
 	k_internal inline real32 Dot(KVector3 A, KVector3 B)
 	{
-		real32 Result = (A.X * B.X) + (A.Y * B.Y) + (A.Z + B.Z);
+		KVector3 Combine = A * B;
+		real32 Result = Combine.X + Combine.Y + Combine.Z;
 
 		return (Result);
 	}
@@ -1758,6 +1862,11 @@ class KVector4
 		this->Y -= Value.Y;
 		this->Z -= Value.Z;
 		this->W -= Value.W;
+	}
+
+	inline real32& operator[](uint32 Index)
+	{
+		return E[Index];
 	}
 
 	inline KVector4 Hadamard(KVector4 Value)
@@ -1963,6 +2072,11 @@ class KMatrix4x4
 		this->E[3] -= A.E[3];
 	}
 
+	inline KVector4& operator[] (uint32 Index)
+	{
+		return E[Index];
+	}
+
 	k_internal KMatrix4x4 Identity(real32 A = 1.0f)
 	{
 		KMatrix4x4 Result = {};
@@ -1982,12 +2096,12 @@ class KMatrix4x4
 		real32 TanHalfOfFOV = Tan(FOVY / 2.0f);
 
 		KMatrix4x4 Result = { 0 };
-		Result.E[0].E[0] = 1.0f / (AspectRatio * TanHalfOfFOV);
-		Result.E[1].E[1] = 1.0f / (TanHalfOfFOV);
-		Result.E[2].E[3] = 1.0f;
+		Result[0][0] = 1.0f / (AspectRatio * TanHalfOfFOV);
+		Result[1][1] = 1.0f / (TanHalfOfFOV);
 
-		Result.E[2].E[2] = ZFar / (ZFar - ZNear);
-		Result.E[3].E[2] = -(ZFar * ZNear) / (ZFar - ZNear);
+		Result[2][2] = (ZFar + ZNear) / (ZFar - ZNear);
+		Result[2][3] = 1.0f;
+		Result[3][2] = -(2.0f * ZFar * ZNear) / (ZFar - ZNear);
 
 		return (Result);
 	}
@@ -2000,18 +2114,18 @@ class KMatrix4x4
 
 		KMatrix4x4 Result = KMatrix4x4::Identity(1.0f);
 
-		Result.E[0].E[0] = See.X;
-		Result.E[1].E[0] = See.Y;
-		Result.E[2].E[0] = See.Z;
-		Result.E[0].E[1] = Upward.X;
-		Result.E[1].E[1] = Upward.Y;
-		Result.E[2].E[1] = Upward.Z;
-		Result.E[0].E[2] = Front.X;
-		Result.E[1].E[2] = Front.Y;
-		Result.E[2].E[2] = Front.Z;
-		Result.E[3].E[0] = -KVector3::Dot(See, Eye);
-		Result.E[3].E[1] = -KVector3::Dot(Upward, Eye);
-		Result.E[3].E[2] = -KVector3::Dot(Front, Eye);
+		Result[0][0] = See.X;
+		Result[1][0] = See.Y;
+		Result[2][0] = See.Z;
+		Result[0][1] = Upward.X;
+		Result[1][1] = Upward.Y;
+		Result[2][1] = Upward.Z;
+		Result[0][2] = Front.X;
+		Result[1][2] = Front.Y;
+		Result[2][2] = Front.Z;
+		Result[3][0] = -KVector3::Dot(See, Eye);
+		Result[3][1] = -KVector3::Dot(Upward, Eye);
+		Result[3][2] = -KVector3::Dot(Front, Eye);
 
 		return (Result);
 	}
@@ -2044,30 +2158,7 @@ class KMatrix4x4
 
 	inline void Rotate(real32 Angle, KVector3 Rotation)
 	{
-		real32 const ConstAngle = Angle;
-		real32 const Cosine = Cos(ConstAngle);
-		real32 const Sine = Sin(ConstAngle);
-
-		KVector3 Axis = Rotation.Normalize();
-		KVector3 TempVector = ((1.0f - Cosine) * Axis);
-
-		KMatrix4x4 Rotate = KMatrix4x4(0.0f);
-		Rotate.E[0].X = Cosine + TempVector.X * Axis.X;
-		Rotate.E[0].Y = 0.0f + TempVector.X * Axis.Y + Sine * Axis.Z;
-		Rotate.E[0].Z = 0.0f + TempVector.X * Axis.Z - Sine * Axis.Y;
-
-		Rotate.E[1].X = 0.0f + TempVector.Y * Axis.X - Sine * Axis.Z;
-		Rotate.E[1].Y = Cosine + TempVector.Y * Axis.Y;
-		Rotate.E[1].Z = 0.0f + TempVector.Y * Axis.Z + Sine * Axis.X;
-
-		Rotate.E[2].X = 0.0f + TempVector.Z * Axis.X + Sine * Axis.Y;
-		Rotate.E[2].Y = 0.0f + TempVector.Z * Axis.Y - Sine * Axis.X;
-		Rotate.E[2].Z = Cosine + TempVector.Z * Axis.Z;
-
-		this->E[0] = this->E[0] * Rotate.E[0].X + this->E[1] * Rotate.E[0].Y + this->E[2] * Rotate.E[0].Z;
-		this->E[1] = this->E[0] * Rotate.E[1].X + this->E[1] * Rotate.E[1].Y + this->E[2] * Rotate.E[1].Z;
-		this->E[2] = this->E[0] * Rotate.E[2].X + this->E[1] * Rotate.E[2].Y + this->E[2] * Rotate.E[2].Z;
-		this->E[3] = this->E[3];
+		*this = Rotate(*this, Angle, Rotation);
 	}
 
 	k_internal inline KMatrix4x4 Rotate(KMatrix4x4 Matrix, real32 Angle, KVector3 Rotation)
@@ -2080,23 +2171,25 @@ class KMatrix4x4
 		KVector3 TempVector = ((1.0f - Cosine) * Axis);
 
 		KMatrix4x4 Rotate = KMatrix4x4(0.0f);
-		Rotate.E[0].X = Cosine + TempVector.X * Axis.X;
-		Rotate.E[0].Y = 0.0f + TempVector.X * Axis.Y + Sine * Axis.Z;
-		Rotate.E[0].Z = 0.0f + TempVector.X * Axis.Z - Sine * Axis.Y;
+		Rotate[0][0] = Cosine + TempVector[0] * Axis[0];
+		Rotate[0][1] = 0.0f + TempVector[0] * Axis[1] + Sine * Axis[2];
+		Rotate[0][2] = 0.0f + TempVector[0] * Axis[2] - Sine * Axis[1];
 
-		Rotate.E[1].X = 0.0f + TempVector.Y * Axis.X - Sine * Axis.Z;
-		Rotate.E[1].Y = Cosine + TempVector.Y * Axis.Y;
-		Rotate.E[1].Z = 0.0f + TempVector.Y * Axis.Z + Sine * Axis.X;
+		Rotate[1][0] = 0.0f + TempVector[1] * Axis[0] - Sine * Axis[2];
+		Rotate[1][1] = Cosine + TempVector[1] * Axis[1];
+		Rotate[1][2] = 0.0f + TempVector[1] * Axis[2] + Sine * Axis[0];
 
-		Rotate.E[2].X = 0.0f + TempVector.Z * Axis.X + Sine * Axis.Y;
-		Rotate.E[2].Y = 0.0f + TempVector.Z * Axis.Y - Sine * Axis.X;
-		Rotate.E[2].Z = Cosine + TempVector.Z * Axis.Z;
+		Rotate[2][0] = 0.0f + TempVector[2] * Axis[0] + Sine * Axis[1];
+		Rotate[2][1] = 0.0f + TempVector[2] * Axis[1] - Sine * Axis[0];
+		Rotate[2][2] = Cosine + TempVector[2] * Axis[2];
 
-		KMatrix4x4 Result = KMatrix4x4(0.0f);
-		Result.E[0] = Matrix.E[0] * Rotate.E[0].X + Matrix.E[1] * Rotate.E[0].Y + Matrix.E[2] * Rotate.E[0].Z;
-		Result.E[1] = Matrix.E[0] * Rotate.E[1].X + Matrix.E[1] * Rotate.E[1].Y + Matrix.E[2] * Rotate.E[1].Z;
-		Result.E[2] = Matrix.E[0] * Rotate.E[2].X + Matrix.E[1] * Rotate.E[2].Y + Matrix.E[2] * Rotate.E[2].Z;
-		Result.E[3] = Matrix.E[3];
+		KMatrix4x4 Result = { 0.0f };
+
+		Result[0] = Matrix[0] * Rotate[0][0] + Matrix[1] * Rotate[0][1] + Matrix[2] * Rotate[0][2];
+		Result[1] = Matrix[0] * Rotate[1][0] + Matrix[1] * Rotate[1][1] + Matrix[2] * Rotate[1][2];
+		Result[2] = Matrix[0] * Rotate[2][0] + Matrix[1] * Rotate[2][1] + Matrix[2] * Rotate[2][2];
+		Result[3] = Matrix[3];
+
 		return (Result);
 	}
 
@@ -2107,23 +2200,23 @@ class KMatrix4x4
 
 	k_internal inline KMatrix4x4 Translate(KMatrix4x4 Matrix, KVector3 Position)
 	{
-		Matrix.E[3] = Matrix.E[0] * Position.E[0] + Matrix.E[1] * Position.E[1] + Matrix.E[2] * Position.E[2] + Matrix.E[3];
+		Matrix[3] = Matrix[0] * Position[0] + Matrix[1] * Position[1] + Matrix[2] * Position[2] + Matrix[3];
 
 		return (Matrix);
 	}
 
 	inline void Scale(KVector3 Scale)
 	{
-		this->E[0].E[0] *= Scale.E[0];
-		this->E[1].E[1] *= Scale.E[1];
-		this->E[2].E[2] *= Scale.E[2];
+		this->E[0][0] *= Scale[0];
+		this->E[1][1] *= Scale[1];
+		this->E[2][2] *= Scale[2];
 	}
 
 	k_internal inline KMatrix4x4 Scale(KMatrix4x4 Matrix, KVector3 Scale)
 	{
-		Matrix.E[0] *= Scale.E[0];
-		Matrix.E[1] *= Scale.E[1];
-		Matrix.E[2] *= Scale.E[2];
+		Matrix[0] *= Scale[0];
+		Matrix[1] *= Scale[1];
+		Matrix[2] *= Scale[2];
 	}
 };
 
@@ -2271,6 +2364,11 @@ class KQuaternion
 	inline void operator*=(KQuaternion Quat)
 	{
 		*this = *this * Quat;
+	}
+
+	inline real32& operator[](uint32 Index)
+	{
+		return E[Index];
 	}
 
 	inline k_internal real32 Squared(KQuaternion Quat)

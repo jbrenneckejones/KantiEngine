@@ -91,10 +91,9 @@ k_internal
 PLATFORM_GAME_ERROR(Win32Error)
 {
 	Win32DebugConsole(Message);
-	Win32DebugConsole(" In: ");
-	Win32DebugConsole(File);
-	Win32DebugConsole(" Line: ");
-	Win32DebugConsole(LineNumber);
+	char Buffer[256];
+	snprintf(Buffer, sizeof(Buffer), " In: %s Line: %d", File.Data(), LineNumber);
+	Win32DebugConsole(Buffer);
 }
 
 // Memory
@@ -238,7 +237,7 @@ k_internal void SetWin32FunctionCalls(PlatformFunctionHandles& Win32Handles)
 	Win32Handles.GetFileContents = Win32GetFileContents;
 	Win32Handles.GetPerformanceCounter = Win32GetLastCounter;
 	Win32Handles.GetPerformanceFrequency = Win32GetPerformanceFrequency;
-	Win32Handles.PlatformAllocateMemory = Win32AllocateMemory;
+	Win32Handles.PlatforMemAllocateMemory = Win32AllocateMemory;
 	Win32Handles.SetFileContents = Win32SetFileContents;
 }
 
@@ -412,7 +411,7 @@ WinMain(HINSTANCE Instance, HINSTANCE PreviousInstance, LPSTR CommandLine, int S
 	if (RegisterClassA(&WindowClass))
 	{
 		HWND Window = CreateWindowExA(0, WindowClass.lpszClassName, "KantiEngine",
-			WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0, Instance, 0);
+			WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, 0, 0, Instance, 0);
 
 		if (Window)
 		{

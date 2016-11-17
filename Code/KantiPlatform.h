@@ -5,36 +5,6 @@
 // extern "C" {
 // #endif
 
-//
-// NOTE(casey): Compilers
-//
-
-#if !defined(COMPILER_MSVC)
-#define COMPILER_MSVC 0
-#endif
-
-#if !defined(COMPILER_LLVM)
-#define COMPILER_LLVM 0
-#endif
-
-#if !COMPILER_MSVC && !COMPILER_LLVM
-#if _MSC_VER
-#undef COMPILER_MSVC
-#define COMPILER_MSVC 1
-#else
-// TODO(casey): Moar compilerz!!!
-#undef COMPILER_LLVM
-#define COMPILER_LLVM 1
-#endif
-#endif
-
-#if COMPILER_MSVC
-#include <intrin.h>
-#elif COMPILER_LLVM
-#include <x86intrin.h>
-#else
-#error SEE/NEON optimizations are not available for this compiler yet!!!!
-#endif
 
 #include <stdint.h>
 #include <stddef.h>
@@ -120,7 +90,7 @@ class KQuaternion;
 inline uint32
 SafeTruncateUInt64(uint64 Value)
 {
-	// TODO(casey): Defines for maximum values
+	// TODO(Julian): Defines for maximum values
 	Assert(Value <= 0xFFFFFFFF);
 	uint32 Result = (uint32)Value;
 	return(Result);
@@ -129,7 +99,7 @@ SafeTruncateUInt64(uint64 Value)
 inline uint16
 SafeTruncateToU16(uint32 Value)
 {
-	// TODO(casey): Defines for maximum values
+	// TODO(Julian): Defines for maximum values
 	Assert(Value <= 0xFFFF);
 	uint16 Result = (uint16)Value;
 	return(Result);

@@ -2,7 +2,10 @@
 
 class KantiRenderManager
 {
-	public:
+public:
+
+	uint32 WindowWidth;
+	uint32 WindowHeight;
 
 	platform_game_render_initialize* PlatformInitializeRenderer;
 	platform_game_update_and_render* PlatformRenderer;

@@ -1,8 +1,10 @@
 #ifndef KANTI_ENGINE
 
+#define ENGINE_VERSION 001
+
 #include "KantiPlatform.h"
 
-k_internal void
+k_internal void*
 MemCopy(void* Destination, void* Source, memory_index Size);
 
 k_internal void
@@ -17,7 +19,6 @@ MemRealloc(void* Pointer, memory_index SourceSize, memory_index NewSize, uint8 A
 k_internal void
 MemDealloc(void* Pointer);
 
-#include "KantiIntrinsics.h"
 #include "KantiMath.h"
 
 // Time
@@ -69,19 +70,64 @@ struct KVertex
 	KVector2 UV;
 	KVector3 Color;
 	KVector3 Normal;
+
+	bool32 operator==(const KVertex& Comparer) const 
+	{
+		return  Position == Comparer.Position &&
+				Color == Comparer.Color &&
+				UV == Comparer.UV &&
+				Normal == Comparer.Normal;
+	}
 };
+
+namespace std 
+{
+	template<> struct hash<KVector2>
+	{
+		memory_index operator()(const KVector2& Vector) const
+		{
+			return ((hash<real32>()(Vector.X) ^ (hash<real32>()(Vector.Y) << 1)) >> 1);
+		}
+	};
+
+	template<> struct hash<KVector3>
+	{
+		memory_index operator()(const KVector3& Vector) const
+		{
+			return ((hash<real32>()(Vector.X) ^ (hash<real32>()(Vector.Y) << 1)) >> 1) ^ (hash<real32>()(Vector.Z) << 1);
+		}
+	};
+
+	template<> struct hash<KVertex>
+	{
+		memory_index operator()(const KVertex& Vertex) const
+		{
+			return ((hash<KVector3>()(Vertex.Position) ^ (hash<KVector3>()(Vertex.Color) << 1)) >> 1) ^ (hash<KVector2>()(Vertex.UV) << 1);
+		}
+	};
+}
+
 
 struct KMatrixData
 {
-	KMatrix4x4 Projection;
 	KMatrix4x4 Model;
 	KMatrix4x4 View;
+	KMatrix4x4 Projection;	
 };
 
 struct KMeshData
 {
 	KList<KVertex> Vertices;
 	KList<uint32> Indices;
+};
+
+struct KImageData
+{
+	void* Data;
+	int32 Width;
+	int32 Height;
+	int32 Channels;
+	memory_index Size;
 };
 
 #define PLATFORM_GAME_RENDER_INITIALIZE(name) void name(renderer_platform& Platform)
@@ -96,22 +142,15 @@ typedef PLATFORM_CREATE_MESH_BUFFER(platform_create_mesh_buffer);
 #include "KantiManagers/KantiConversionManager.h"
 #include "KantiManagers/KantiMemoryManager.h"
 #include "KantiManagers/KantiDebugManager.h"
+
+// TODO(Julian): Maybe remove this
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
+
+#include <unordered_map>
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tinyobj/tiny_obj_loader.h"
 #include "KantiManagers/KantiFileManager.h"
-
-// Vulkan
-#ifdef VULKAN
-
-#include "vulkan/vulkan.h"
-#include "KantiVulkan/KantiVulkan.h"
-#include "KantiVulkan/VulkanBuffer.h"
-#include "KantiVulkan/VulkanCommandBuffer.h"
-#include "KantiVulkan/VulkanDebug.h"
-#include "KantiVulkan/VulkanEncapsulatedDevice.h"
-#include "KantiVulkan/VulkanHelper.h"
-#include "KantiVulkan/VulkanSwapChain.h"
-#include "KantiVulkan/VulkanRenderer.h"
-
-#endif // VULKAN
 
 // OpenGL
 #ifdef OPENGL
@@ -130,15 +169,13 @@ typedef PLATFORM_CREATE_MESH_BUFFER(platform_create_mesh_buffer);
 #include "KantiManagers/KantiRandomManager.h"
 #include "KantiManagers/KantiSoundManager.h"
 
-#include "KantiPrimitives.h"
-
 struct PlatformFunctionHandles
 {
 	// Unique ID
 	platform_get_uuid* GetUUID;
 
 	// Memory
-	platform_allocate_memory* PlatformAllocateMemory;
+	platform_allocate_memory* PlatforMemAllocateMemory;
 
 	// Debug
 	platform_debug_console* ConsoleOutput;
@@ -181,7 +218,7 @@ public:
 
 	void InitializeGameManager(PlatformFunctionHandles PlatformHandles)
 	{
-		KantiMemoryManager::PlatformMemoryAllocate = PlatformHandles.PlatformAllocateMemory;
+		KantiMemoryManager::PlatformMemoryAllocate = PlatformHandles.PlatforMemAllocateMemory;
 
 		memory_index MemorySize = Megabytes(100);
 		int64 MemoryAddress = 0;

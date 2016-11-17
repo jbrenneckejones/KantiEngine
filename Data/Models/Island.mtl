@@ -1,0 +1,54 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 16.11.2016 07:38:18
+
+newmtl wire_204204204
+	Ns 32
+	d 1
+	Tr 0
+	Tf 1 1 1
+	illum 2
+	Ka 0.800000 0.800000 0.800000
+	Kd 0.800000 0.800000 0.800000
+	Ks 0.350000 0.350000 0.350000
+
+newmtl water
+	Ns 26.036993
+	Ni 1.500000
+	d 1.000000
+	Tr 0.000000
+	Tf 1.000000 1.000000 1.000000 
+	illum 2
+	Ka 0.000000 0.000000 0.000000
+	Kd 0.800000 0.800000 0.800000
+	Ks 0.446757 0.446757 0.446757
+	Ke 0.000000 0.000000 0.000000
+	map_Ka C:\Users\jbren\Downloads\low-poly-island\source\829f8adfeb7b42e8840a05c5b0dce453.fbm\water.png
+	map_Kd C:\Users\jbren\Downloads\low-poly-island\source\829f8adfeb7b42e8840a05c5b0dce453.fbm\water.png
+
+newmtl deco
+	Ns 10.000000
+	Ni 1.500000
+	d 1.000000
+	Tr 0.000000
+	Tf 1.000000 1.000000 1.000000 
+	illum 2
+	Ka 0.588000 0.588000 0.588000
+	Kd 0.588000 0.588000 0.588000
+	Ks 0.000000 0.000000 0.000000
+	Ke 0.000000 0.000000 0.000000
+	map_Ka C:\Users\jbren\Downloads\low-poly-island\source\829f8adfeb7b42e8840a05c5b0dce453.fbm\deco.png
+	map_Kd C:\Users\jbren\Downloads\low-poly-island\source\829f8adfeb7b42e8840a05c5b0dce453.fbm\deco.png
+
+newmtl grass
+	Ns 10.000000
+	Ni 1.500000
+	d 1.000000
+	Tr 0.000000
+	Tf 1.000000 1.000000 1.000000 
+	illum 2
+	Ka 0.588000 0.588000 0.588000
+	Kd 0.588000 0.588000 0.588000
+	Ks 0.000000 0.000000 0.000000
+	Ke 0.000000 0.000000 0.000000
+	map_Ka C:\Users\jbren\Downloads\low-poly-island\source\829f8adfeb7b42e8840a05c5b0dce453.fbm\grassfloor.png
+	map_Kd C:\Users\jbren\Downloads\low-poly-island\source\829f8adfeb7b42e8840a05c5b0dce453.fbm\grassfloor.png

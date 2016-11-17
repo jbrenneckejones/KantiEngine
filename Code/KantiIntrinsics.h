@@ -1,8 +1,0 @@
-#ifndef KANTI_INSTRINSICS
-
-
-
-
-
-#define KANTI_INSTRINSICS
-#endif // !KANTI_INSTRINSICS
